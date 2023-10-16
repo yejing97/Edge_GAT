@@ -1,0 +1,92 @@
+
+import torch
+from torch import nn
+
+# from labml_helpers.module import Module
+import pytorch_lightning as pl
+
+
+
+class EdgeGraphAttention(pl.LightningModule):
+
+    def __init__(self, in_features: int, out_features: int, n_heads: int,
+                 is_concat: bool = True,
+                 dropout: float = 0.6,
+                 leaky_relu_negative_slope: float = 0.2,
+                 share_weights: bool = False):
+
+        super().__init__()
+
+        self.is_concat = is_concat
+        self.n_heads = n_heads
+        self.share_weights = share_weights
+
+        if is_concat:
+            assert out_features % n_heads == 0
+            self.n_hidden = out_features // n_heads
+        else:
+            self.n_hidden = out_features
+
+        self.linear_l = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
+        self.linear_b = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
+
+        if share_weights:
+            self.linear_r = self.linear_l
+        else:
+            self.linear_r = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
+        self.attn = nn.Linear(self.n_hidden, 1, bias=False)
+        self.activation = nn.LeakyReLU(negative_slope=leaky_relu_negative_slope)
+        self.softmax = nn.Softmax(dim=1)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, h: torch.Tensor, b: torch.Tensor, adj_mat: torch.Tensor):
+
+        n_nodes = h.shape[0]
+
+        g_l = self.linear_l(h).view(n_nodes, self.n_heads, self.n_hidden)
+        g_r = self.linear_r(h).view(n_nodes, self.n_heads, self.n_hidden)
+
+        g_b = self.linear_b(b).view(n_nodes*n_nodes, self.n_heads, self.n_hidden)
+        g_l_repeat = g_l.repeat(n_nodes, 1, 1)
+
+        g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=0)
+
+        g_sum = g_l_repeat + g_r_repeat_interleave + g_b
+        g_sum = g_sum.view(n_nodes, n_nodes, self.n_heads, self.n_hidden)
+
+        e = self.attn(self.activation(g_sum))
+        e = e.squeeze(-1)
+
+        assert adj_mat.shape[0] == 1 or adj_mat.shape[0] == n_nodes
+        assert adj_mat.shape[1] == 1 or adj_mat.shape[1] == n_nodes
+        assert adj_mat.shape[2] == 1 or adj_mat.shape[2] == self.n_heads
+
+        e = e.masked_fill(adj_mat == 0, float(-1e9))
+
+        a = self.softmax(e)
+        # a = self.dropout(a)
+
+
+        #h_{q} = \sum_{i=0}^{N}( \alpha  ^{i,j} \cdot W_{h}\cdot \sum_{j\in \mathcal{N} _{i}} h_{q-1}^{j})
+        new_node = torch.einsum('ijh,jhf->ihf', a, g_r)
+        # b_{q}= \sum_{i,j=0}^{N}( \alpha  ^{i,j} \cdot W_{b}\cdot b_{q-1}^{i,j})
+        new_edge = torch.einsum('ijh,ijhf->ijhf', a, g_b.view(n_nodes, n_nodes, self.n_heads, self.n_hidden))
+        # torch.set_printoptions(profile="full")
+        # print(new_edge)
+        if self.is_concat:
+            return new_node.reshape(n_nodes, self.n_heads * self.n_hidden), new_edge.reshape(n_nodes, n_nodes, self.n_heads * self.n_hidden)
+        else:
+            return new_node.reshape(n_nodes, self.n_heads * self.n_hidden).mean(dim=1), new_edge.reshape(n_nodes, n_nodes, self.n_heads * self.n_hidden).mean(dim=2)
+
+
+class Readout(pl.LightningModule):
+    def __init__(self, in_features: int, class_nb: int) -> None:
+        self.linear = nn.Linear(in_features, class_nb)
+        self.softmax = nn.Softmax(dim=1)
+        super().__init__()
+    
+    def forward(self, x):
+        x = x.reshape(-1, x.shape[-1])
+        x = self.linear(x)
+        x = self.softmax(x)
+        return x
