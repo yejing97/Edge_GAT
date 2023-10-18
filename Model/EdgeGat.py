@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 class EdgeGraphAttention(pl.LightningModule):
 
     def __init__(self, in_features: int, out_features: int, n_heads: int,
-                 is_concat: bool = True,
+                 is_concat: bool = False,
                  dropout: float = 0.6,
                  leaky_relu_negative_slope: float = 0.2,
                  share_weights: bool = False):
@@ -60,7 +60,6 @@ class EdgeGraphAttention(pl.LightningModule):
         assert adj_mat.shape[0] == 1 or adj_mat.shape[0] == n_nodes
         assert adj_mat.shape[1] == 1 or adj_mat.shape[1] == n_nodes
         assert adj_mat.shape[2] == 1 or adj_mat.shape[2] == self.n_heads
-
         e = e.masked_fill(adj_mat == 0, float(-1e9))
 
         a = self.softmax(e)
@@ -81,9 +80,9 @@ class EdgeGraphAttention(pl.LightningModule):
 
 class Readout(pl.LightningModule):
     def __init__(self, in_features: int, class_nb: int) -> None:
+        super().__init__()
         self.linear = nn.Linear(in_features, class_nb)
         self.softmax = nn.Softmax(dim=1)
-        super().__init__()
     
     def forward(self, x):
         x = x.reshape(-1, x.shape[-1])

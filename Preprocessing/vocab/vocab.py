@@ -1,8 +1,6 @@
 from typing import Dict, List
-import sys
 import os
 class CROHMEVocab:
-    root = sys.path[0]
     # print(sys.path)
     # print(sys.path[0])
     PAD_IDX = 0
