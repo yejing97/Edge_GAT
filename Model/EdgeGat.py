@@ -51,16 +51,25 @@ class EdgeGraphAttention(pl.LightningModule):
 
         g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=0)
 
-        g_sum = g_l_repeat + g_r_repeat_interleave + g_b
+        # g_sum = g_l_repeat + g_r_repeat_interleave + g_b
+        g_sum = g_l_repeat + g_r_repeat_interleave
+        
         g_sum = g_sum.view(n_nodes, n_nodes, self.n_heads, self.n_hidden)
 
         e = self.attn(self.activation(g_sum))
         e = e.squeeze(-1)
 
-        assert adj_mat.shape[0] == 1 or adj_mat.shape[0] == n_nodes
-        assert adj_mat.shape[1] == 1 or adj_mat.shape[1] == n_nodes
-        assert adj_mat.shape[2] == 1 or adj_mat.shape[2] == self.n_heads
-        e = e.masked_fill(adj_mat == 0, float(-1e9))
+        # add self connection
+        # print(adj_mat.shape)
+        # adj_mat_self = adj_mat.fill_diagonal_(1).unsqueeze(-1)
+        adj_mat_self = adj_mat.unsqueeze(-1)
+
+        assert adj_mat_self.shape[0] == 1 or adj_mat_self.shape[0] == n_nodes
+        assert adj_mat_self.shape[1] == 1 or adj_mat_self.shape[1] == n_nodes
+        assert adj_mat_self.shape[2] == 1 or adj_mat_self.shape[2] == self.n_heads
+
+        e = e.masked_fill(adj_mat_self == 0, float(-1e9))
+
 
         a = self.softmax(e)
         # a = self.dropout(a)

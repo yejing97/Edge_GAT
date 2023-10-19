@@ -18,9 +18,9 @@ model = LitModel(
     node_class_nb = 114,
     edge_class_nb = 14,
     dropout = 0.6,
-    lambda1 = 0.5,
-    lambda2 = 0.5,
-    lr = 0.001
+    lambda1 = 0.1,
+    lambda2 = 0.9,
+    lr = 0.01
 )
 
 trainer = pl.Trainer()

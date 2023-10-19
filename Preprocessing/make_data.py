@@ -27,7 +27,7 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, rel_emb_nb):
     alpha1 = max_len/stroke_emb_nb
     alpha2 = max_len/rel_emb_nb
     strokes_emb = np.zeros((len(strokes), stroke_emb_nb, 2), dtype=np.float32)
-    nospeed = np.zeros((len(strokes), stroke_emb_nb, 2), dtype=np.float32)
+    # nospeed = np.zeros((len(strokes), stroke_emb_nb, 2), dtype=np.float32)
     strokes_no_speed = []
     los_graph = los.LOS(strokes)
     for i in range(len(strokes)):
