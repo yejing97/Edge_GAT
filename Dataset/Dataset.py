@@ -7,7 +7,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         super().__init__()
         self.data_type = data_type
         self.data_path = os.path.join(root_path, self.data_type)
-        self.data_list = os.listdir(self.data_path)[:100]
+        self.data_list = os.listdir(self.data_path)
 
     def __getitem__(self, index):
         data = np.load(os.path.join(self.data_path, self.data_list[index]))

@@ -20,8 +20,8 @@ model = LitModel(
     dropout = 0.6,
     lambda1 = 0.1,
     lambda2 = 0.9,
-    lr = 0.01
+    lr = 0.001
 )
 
-trainer = pl.Trainer()
+trainer = pl.Trainer(accelerator="gpu", devices="auto")
 trainer.fit(model, dm)
