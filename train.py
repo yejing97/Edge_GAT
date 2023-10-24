@@ -3,7 +3,7 @@ from Dataset.Datamodule import CROHMEDatamodule
 import pytorch_lightning as pl
 
 dm = CROHMEDatamodule(
-    root_path = '/home/e19b516g/yejing/data/data_for_graph/npz/',
+    root_path = '/home/xie-y/data/npz/',
     shuffle = True,
     num_workers = 8
 )
