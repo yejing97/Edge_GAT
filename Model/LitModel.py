@@ -35,7 +35,7 @@ class LitModel(pl.LightningModule):
         # add self connection for los
         los = los.squeeze(0).fill_diagonal_(1)
 
-        node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+        node_hat, edge_hat = self.model(strokes_emb.cuda(), edges_emb.cuda(), los.cuda())
         # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
         # print(edge_hat)
         # print(edges_label)
@@ -63,7 +63,7 @@ class LitModel(pl.LightningModule):
 
         # add self connection for los
         los = los.squeeze(0).fill_diagonal_(1)
-        node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+        node_hat, edge_hat = self.model(strokes_emb.cuda(), edges_emb.cuda(), los.cuda())
         # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
 
         

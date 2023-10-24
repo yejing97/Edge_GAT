@@ -16,7 +16,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         stroke_labels = torch.from_numpy(data['stroke_labels']).long()
         edge_labels = torch.from_numpy(data['edge_labels']).long()
         los = torch.from_numpy(data['los']).long()
-        return strokes_emb.cuda(), edges_emb.squeeze().reshape(edges_emb.shape[0].cuda(), edges_emb.shape[1].cuda(), edges_emb.shape[2]*edges_emb.shape[3]).cuda(), los.cuda(), stroke_labels.cuda(), edge_labels.cuda()
+        return strokes_emb, edges_emb.squeeze().reshape(edges_emb.shape[0], edges_emb.shape[1], edges_emb.shape[2]*edges_emb.shape[3]), los, stroke_labels, edge_labels
     
     def __len__(self):
         return len(self.data_list)
