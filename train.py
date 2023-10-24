@@ -23,5 +23,5 @@ model = LitModel(
     lr = 0.001
 )
 
-trainer = pl.Trainer(max_epochs=100, accelerator="gpu", devices=-1, progress_bar_refresh_rate=1)
+trainer = pl.Trainer(max_epochs=100, accelerator="gpu", devices=-1)
 trainer.fit(model, dm)
