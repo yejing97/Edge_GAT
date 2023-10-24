@@ -54,8 +54,10 @@ class MainModel(pl.LightningModule):
 
         self.gat2 = GraphAttentionLayer(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout=self.dropout)
 
-        self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
+        # self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
         self.readout_edge = Readout(self.gat_output_size, self.edge_class_nb)
+
+        self.readout_node = torch.nn.Linear(self.gat_input_size, self.node_class_nb)
 
         print('node_emb', get_parameter_number(self.node_emb))
         print('edge_emb', get_parameter_number(self.edge_emb))
@@ -75,10 +77,11 @@ class MainModel(pl.LightningModule):
         # indices = torch.nonzero(adj_mat.reshape(-1)).squeeze()
         # print('pred',indices)
         # edge_gat_feat = edge_gat_feat.reshape(-1, self.gat_output_size)[indices]
-        node_gat_feat = self.gat1(node_emb_feat, adj_mat.unsqueeze(-1))
-        node_gat_feat = self.activation(node_gat_feat)
-        node_gat_feat = self.gat2(node_gat_feat, adj_mat.unsqueeze(-1))
 
-        node_readout = self.readout_node(node_gat_feat)
+        # node_gat_feat = self.gat1(node_emb_feat, adj_mat.unsqueeze(-1))
+        # node_gat_feat = self.activation(node_gat_feat)
+        # node_gat_feat = self.gat2(node_gat_feat, adj_mat.unsqueeze(-1))
+
+        node_readout = self.readout_node(node_emb_feat)
         # edge_readout = self.readout_edge(edge_gat_feat)
         return node_readout, None
