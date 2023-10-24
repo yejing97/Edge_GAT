@@ -27,7 +27,7 @@ class LitModel(pl.LightningModule):
         self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
     
     def training_step(self, batch, batch_idx):
-        strokes_emb, edges_emb, los, strokes_label, edges_label = batch.cuda()
+        strokes_emb, edges_emb, los, strokes_label, edges_label = batch
         strokes_label = strokes_label.squeeze(0)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
         edges_label = edges_label.squeeze(0).reshape(-1)[indices]
