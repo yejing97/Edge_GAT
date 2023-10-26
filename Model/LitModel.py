@@ -23,7 +23,7 @@ class LitModel(pl.LightningModule):
         self.node_class_nb = args['node_class_nb']
         self.edge_class_nb = args['edge_class_nb']
         self.dropout = args['dropout']
-        self.d = 'gpu' if torch.cuda.is_available() else 'cpu'
+        self.d = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.loss = torch.nn.CrossEntropyLoss()
         self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)

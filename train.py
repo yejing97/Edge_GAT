@@ -22,7 +22,7 @@ parser.add_argument('--lambda2', type=float, default=0.5)
 
 parser.add_argument('--epoch', type=int, default=100)
 parser.add_argument('--accelerator', type=str, default="gpu")
-parser.add_argument('--device', type=str, default='gpu' if torch.cuda.is_available() else 'cpu')
+parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
 args = parser.parse_args()
 # device = 'gpu' if torch.cuda.is_available() else 'cpu'
 
