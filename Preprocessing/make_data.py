@@ -61,7 +61,11 @@ def make_batch_npz(tag, root_path, tgt_path, stroke_nb, rel_nb, speed):
                     else:
                         print(lg + ' not exists')
                 print('make npz for ' + inkml)
-                make_npz(os.path.join(tgt_path, tag), inkml, lg, stroke_nb, rel_nb, speed)
+                try:
+                    make_npz(os.path.join(tgt_path, tag), inkml, lg, stroke_nb, rel_nb, speed)
+                except:
+                    print('error in ' + inkml)
+                    continue
 
 # make_batch_npz('train', '/home/e19b516g/yejing/data/data_for_graph/INKML', '/home/e19b516g/yejing/data/data_for_graph/npz', 100, 5)
 
