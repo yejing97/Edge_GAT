@@ -12,8 +12,8 @@ import os
 from io import StringIO
 from collections import OrderedDict
 
-from LG.smallGraph import SmallGraph
-from LG.compareTools import cmpNodes, cmpEdges
+from Preprocessing.LG.smallGraph import SmallGraph
+from Preprocessing.LG.compareTools import cmpNodes, cmpEdges
 
 
 class Lg(object):

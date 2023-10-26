@@ -20,7 +20,7 @@ import itertools
 import cmath
 from math import sqrt
 
-from LG.compareTools import cmpNodes, cmpEdges
+from Preprocessing.LG.compareTools import cmpNodes, cmpEdges
 
 
 class SmallGraph(object):

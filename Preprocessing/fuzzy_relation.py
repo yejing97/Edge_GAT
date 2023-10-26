@@ -1,7 +1,7 @@
 # fuzzy landscape
 import math
 import numpy as np
-from normalization import calculate_center
+from Preprocessing.normalization import calculate_center
 PI = math.pi
 def fuzzy_se(op, ua):
     return max(0, 1 -  (2/PI)*np.arccos(op.dot(ua)/np.linalg.norm(op)))

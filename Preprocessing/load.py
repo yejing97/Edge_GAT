@@ -6,8 +6,8 @@ PI = math.pi
 
 import sys
 
-from LG.lg import Lg
-from vocab.vocab import vocab
+from Preprocessing.LG.lg import Lg
+from Preprocessing.vocab.vocab import vocab
 
 doc_namespace = "{http://www.w3.org/2003/InkML}"
 

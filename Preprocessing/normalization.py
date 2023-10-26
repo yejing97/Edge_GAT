@@ -8,6 +8,36 @@ def stroke_length(stroke):
         L_n.append(L)
     return L_n
 
+def Simple_norm_equation(stroke, norm_nb):
+    new_list = []
+        # s = Spatial_norm_stroke_tension(strokes[i])
+    # s = stroke
+    if len(stroke) < norm_nb:
+        new_stroke = np.zeros((norm_nb, 2))
+        new_stroke[:len(stroke), :] = stroke
+    else:
+        new_stroke = multi_sampling(stroke, norm_nb)
+
+    if np.isnan(new_stroke).any() == True:
+        print('norm error')
+    else:
+        new_list.append(new_stroke)
+
+    return new_list
+
+def multi_sampling(stroke, norm_nb):
+    new_stroke = np.zeros((len(stroke)*norm_nb, 2))
+    # new_stroke = []
+    for i in range(len(stroke)):
+        new_stroke[i*norm_nb:(i+1)*norm_nb, :] = stroke[i]
+        # new_stroke[i*norm_nb:(i+1)*norm_nb, :] = stroke[:,i].expand(norm_nb, 2).reshape(2,-1)
+    # points = np.zeros((norm_nb, 2))
+    points = []
+    for i in range(norm_nb):
+        # points[i,:] = np.mean(new_stroke[i*len(stroke): (i+1)*len(stroke),:])
+        points.append(np.mean(new_stroke[i*len(stroke): (i+1)*len(stroke),:]).tolist())
+    return points
+
 def Speed_norm_stroke(stroke, alpha):
     new_stroke = []
 

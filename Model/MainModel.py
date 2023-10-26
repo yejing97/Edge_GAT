@@ -43,7 +43,7 @@ class MainModel(pl.LightningModule):
         self.softmax2 = torch.nn.Softmax(dim=2)
         self.activation = torch.nn.ReLU()
 
-        self.node_emb = XceptionTime(self.node_input_size, self.gat_input_size)
+        self.node_emb = XceptionTime(self.node_input_size, self.node_class_nb)
         self.edge_emb = torch.nn.Linear(self.edge_input_size, self.gat_input_size)
 
 
@@ -82,6 +82,7 @@ class MainModel(pl.LightningModule):
         # node_gat_feat = self.activation(node_gat_feat)
         # node_gat_feat = self.gat2(node_gat_feat, adj_mat.unsqueeze(-1))
 
-        node_readout = self.readout_node(node_emb_feat)
+        # node_readout = self.readout_node(node_emb_feat)
         # edge_readout = self.readout_edge(edge_gat_feat)
-        return node_readout, None
+        return node_emb_feat, None
+        # return node_readout, edge_readout

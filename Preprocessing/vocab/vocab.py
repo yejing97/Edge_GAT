@@ -1,5 +1,6 @@
 from typing import Dict, List
 import os
+import sys
 class CROHMEVocab:
     # print(sys.path)
     # print(sys.path[0])
@@ -10,8 +11,8 @@ class CROHMEVocab:
     # EOS_IDX = 2
     def __init__(
         self,
-        dict_sym: str = root + '/vocab/dictionary.txt',
-        dict_rel: str = root + '/vocab/relation.txt'
+        dict_sym: str = sys.path[0] + '/Preprocessing/vocab/dictionary.txt',
+        dict_rel: str = sys.path[0] + '/Preprocessing/vocab/relation.txt'
         # dict_rel: str = './vocab/relation.txt'
         ) -> None:
         self.word2idx = dict()
