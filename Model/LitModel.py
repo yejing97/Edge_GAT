@@ -39,7 +39,7 @@ class LitModel(pl.LightningModule):
         # self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
     
     def load_ckpt(self, ckpt_path):
-        ckpt = torch.load(ckpt_path)
+        ckpt = torch.load(ckpt_path, map_location=self.d)
         new_state_dict = OrderedDict()
         for k, v in ckpt['state_dict'].items():
             # print(k, v.shape)
@@ -54,7 +54,7 @@ class LitModel(pl.LightningModule):
         edges_label = edges_label.squeeze(0).reshape(-1)[indices]
 
         # add self connection for los
-        los = los.squeeze(0).fill_diagonal_(1)
+        los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
 
         # node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))
         node_gat_feat = self.node_emb_model(strokes_emb.to(self.d).squeeze(0))
@@ -88,7 +88,7 @@ class LitModel(pl.LightningModule):
         edges_label = edges_label.squeeze(0).reshape(-1)[indices]
 
         # add self connection for los
-        los = los.squeeze(0).fill_diagonal_(1)
+        los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
 
 
         # node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))

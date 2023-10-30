@@ -9,6 +9,7 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/')
+parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 parser.add_argument('--stroke_emb_nb', type=int, default=100)
 parser.add_argument('--rel_emb_nb', type=int, default=5)
 parser.add_argument('--speed', type=bool, default=False)
@@ -48,7 +49,7 @@ model = LitModel(
     gat_n_heads = 8,
     node_class_nb = 114,
     edge_class_nb = 14,
-    ckpt_path = '/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt',
+    ckpt_path = args.ckpt_path,
     dropout = args.dropout,
     lambda1 = args.lambda1,
     lambda2 =  args.lambda2,
