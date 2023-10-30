@@ -78,11 +78,11 @@ class MainModel(pl.LightningModule):
         # print('pred',indices)
         # edge_gat_feat = edge_gat_feat.reshape(-1, self.gat_output_size)[indices]
 
-        # node_gat_feat = self.gat1(node_emb_feat, adj_mat.unsqueeze(-1))
-        # node_gat_feat = self.activation(node_gat_feat)
-        # node_gat_feat = self.gat2(node_gat_feat, adj_mat.unsqueeze(-1))
+        node_gat_feat = self.gat1(node_emb_feat, adj_mat.unsqueeze(-1))
+        node_gat_feat = self.activation(node_gat_feat)
+        node_gat_feat = self.gat2(node_gat_feat, adj_mat.unsqueeze(-1))
 
-        # node_readout = self.readout_node(node_emb_feat)
+        node_readout = self.readout_node(node_gat_feat)
         # edge_readout = self.readout_edge(edge_gat_feat)
-        return node_emb_feat, None
+        return node_readout, None
         # return node_readout, edge_readout
