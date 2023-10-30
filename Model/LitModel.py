@@ -1,8 +1,12 @@
 import torch
 import pytorch_lightning as pl
+from tsai.all import *
+from labml_nn.graphs.gat import GraphAttentionLayer
 from sklearn.metrics import accuracy_score
-# import sys
+from collections import OrderedDict
 
+# import sys
+from Model.EdgeGat import Readout
 from Model.MainModel import MainModel
 
 
@@ -24,10 +28,25 @@ class LitModel(pl.LightningModule):
         self.edge_class_nb = args['edge_class_nb']
         self.dropout = args['dropout']
         self.d = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.ckpt_path = args['ckpt_path']
 
         self.loss = torch.nn.CrossEntropyLoss()
-        self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
+        self.node_emb_model = XceptionTime(self.node_input_size, self.gat_input_size)
+        self.node_emb_model.load_state_dict(self.load_ckpt(self.ckpt_path), strict=False)
+        self.gat1 = GraphAttentionLayer(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout=self.dropout)
+        self.gat2 = GraphAttentionLayer(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout=self.dropout)
+        self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
+        # self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
     
+    def load_ckpt(self, ckpt_path):
+        ckpt = torch.load(ckpt_path)
+        new_state_dict = OrderedDict()
+        for k, v in ckpt['state_dict'].items():
+            # print(k, v.shape)
+            # print(k[:6] + 'node_emb.' + k[6:])
+            new_state_dict[k[:6] + 'node_emb.' + k[6:]] = v
+        return new_state_dict
+
     def training_step(self, batch, batch_idx):
         strokes_emb, edges_emb, los, strokes_label, edges_label = batch
         strokes_label = strokes_label.squeeze(0)
@@ -37,7 +56,12 @@ class LitModel(pl.LightningModule):
         # add self connection for los
         los = los.squeeze(0).fill_diagonal_(1)
 
-        node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))
+        # node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))
+        node_gat_feat = self.node_emb_model(strokes_emb.to(self.d).squeeze(0))
+        node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
+        node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
+        node_hat = self.readout_node(node_gat_feat)
+                
         # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
         # print(edge_hat)
         # print(edges_label)
@@ -65,9 +89,14 @@ class LitModel(pl.LightningModule):
 
         # add self connection for los
         los = los.squeeze(0).fill_diagonal_(1)
-        node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))
-        # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
 
+
+        # node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))
+        # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
+        node_gat_feat = self.node_emb_model(strokes_emb.to(self.d).squeeze(0))
+        node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
+        node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
+        node_hat = self.readout_node(node_gat_feat)
         
         loss = self.loss(node_hat, strokes_label)
         # loss_node = self.loss(node_hat, strokes_label)
