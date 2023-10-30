@@ -41,3 +41,4 @@ class CROHMEDatamodule(pl.LightningDataModule):
             batch_size = 1, 
             shuffle = self.shuffle, 
             num_workers=self.num_workers)
+    
