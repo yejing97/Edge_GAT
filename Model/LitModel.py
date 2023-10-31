@@ -32,7 +32,8 @@ class LitModel(pl.LightningModule):
 
         self.loss = torch.nn.CrossEntropyLoss()
         self.node_emb_model = XceptionTime(self.node_input_size, self.gat_input_size)
-        self.node_emb_model.load_state_dict(self.load_ckpt(self.ckpt_path), strict=False)
+        # if os.path.isfile(self.ckpt_path):
+        #     self.node_emb_model.load_state_dict(self.load_ckpt(self.ckpt_path), strict=False)
         self.gat1 = GraphAttentionLayer(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout=self.dropout)
         self.gat2 = GraphAttentionLayer(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout=self.dropout)
         self.readout_node = Readout(self.gat_output_size, self.node_class_nb)

@@ -8,10 +8,11 @@ import argparse
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--root_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/')
+parser.add_argument('--root_path', type=str, default='/home/xie-y/data/Edge_GAT/S100_R5_Speed_False/')
 parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 parser.add_argument('--stroke_emb_nb', type=int, default=100)
 parser.add_argument('--rel_emb_nb', type=int, default=5)
+parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--speed', type=bool, default=False)
 parser.add_argument('--shuffle', type=bool, default=True)
 parser.add_argument('--num_workers', type=int, default=8)
@@ -37,7 +38,9 @@ if not os.path.exists(npz_path):
 dm = CROHMEDatamodule(
     root_path = npz_path,
     shuffle = args.shuffle,
-    num_workers = args.num_workers
+    batch_size = args.batch_size,
+    num_workers = args.num_workers,
+    reload_dataloaders_every_n_epochs = 1
 )
 
 model = LitModel(

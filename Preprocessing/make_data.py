@@ -30,6 +30,8 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, rel_emb_nb, speed):
     # nospeed = np.zeros((len(strokes), stroke_emb_nb, 2), dtype=np.float32)
     strokes_no_speed = []
     los_graph = los.LOS(strokes)
+    edge_nb = np.sum(los_graph == 1)
+    node_nb = len(strokes)
     for i in range(len(strokes)):
         if speed:
             new_stroke_node = normalization.Simple_norm_equation(strokes[i], stroke_emb_nb)
@@ -46,7 +48,7 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, rel_emb_nb, speed):
     # outfile = TemporaryFile()
     if not os.path.exists(tgt_path):
         os.makedirs(tgt_path)
-    np.savez(os.path.join(tgt_path, file_id + '.npz'), strokes_emb=strokes_emb, edges_emb=edges_emb, stroke_labels=stroke_labels, edge_labels=edge_labels, los=los_graph)
+    np.savez(os.path.join(tgt_path, 'N'+ str(node_nb) + 'E' + str(edge_nb) + '_' + file_id + '.npz'), strokes_emb=strokes_emb, edges_emb=edges_emb, stroke_labels=stroke_labels, edge_labels=edge_labels, los=los_graph)
 
 def make_batch_npz(tag, root_path, tgt_path, stroke_nb, rel_nb, speed):
     for root, _, files in os.walk(os.path.join(root_path, tag)):

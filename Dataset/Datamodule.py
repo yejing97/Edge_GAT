@@ -9,6 +9,7 @@ class CROHMEDatamodule(pl.LightningDataModule):
         self.root_path = args['root_path']
         self.shuffle = args['shuffle']
         self.num_workers = args['num_workers']
+        self.batch_size = args['batch_size']
         # self.train = 'train'
         # self.val = 'val'
         # self.test = 'test'
@@ -17,9 +18,9 @@ class CROHMEDatamodule(pl.LightningDataModule):
         return super().prepare_data()
     
     def setup(self, stage: str):
-        self.dataset_train = CROHMEDataset('train', self.root_path)
-        self.dataset_val = CROHMEDataset('val', self.root_path)
-        self.dataset_test = CROHMEDataset('test', self.root_path)
+        self.dataset_train = CROHMEDataset('train', self.root_path, self.batch_size)
+        self.dataset_val = CROHMEDataset('val', self.root_path, self.batch_size)
+        self.dataset_test = CROHMEDataset('test', self.root_path, self.batch_size)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
