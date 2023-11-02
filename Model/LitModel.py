@@ -58,6 +58,12 @@ class LitModel(pl.LightningModule):
         los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
         return strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d), strokes_label.to(self.d), edges_label.to(self.d)
     
+    def edge_filter(self, edges_emb, edges_label, los):
+        indices = torch.nonzero(los.reshape(-1)).squeeze()
+        edges_label = edges_label[indices]
+        edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
+        return edges_emb, edges_label
+    
     def training_step(self, batch, batch_idx):
         # strokes_emb, edges_emb, los, strokes_label, edges_label = batch
         strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
@@ -66,6 +72,7 @@ class LitModel(pl.LightningModule):
 
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
 
+        edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
         # node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
         # node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
         # node_hat = self.readout_node(node_gat_feat)
