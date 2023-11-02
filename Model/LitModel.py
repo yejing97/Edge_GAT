@@ -59,14 +59,14 @@ class LitModel(pl.LightningModule):
 
         # node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))
         node_gat_feat = self.node_emb_model(strokes_emb.to(self.d).squeeze(0))
-        node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
-        node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
-        node_hat = self.readout_node(node_gat_feat)
+        # node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
+        # node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
+        # node_hat = self.readout_node(node_gat_feat)
                 
         # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
         # print(edge_hat)
         # print(edges_label)
-        loss = self.loss(node_hat, strokes_label)
+        loss = self.loss(node_gat_feat, strokes_label)
         # loss_edge = self.loss(edge_hat, edges_label)
         # if loss_edge.isnan():
         #     loss = loss_node
@@ -74,7 +74,7 @@ class LitModel(pl.LightningModule):
         #     # loss = self.lambda1*loss_node + self.lambda2 * loss_edge
         #     loss = loss_node
         if loss.isnan():
-            print('node_hat', node_hat)
+            print('node_hat', node_gat_feat)
             # print('edge_hat', edge_hat)
             print(los)
         # self.log('train_loss_node', loss_node)
@@ -95,16 +95,16 @@ class LitModel(pl.LightningModule):
         # node_hat, edge_hat = self.model(strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d))
         # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
         node_gat_feat = self.node_emb_model(strokes_emb.to(self.d).squeeze(0))
-        node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
-        node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
-        node_hat = self.readout_node(node_gat_feat)
+        # node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
+        # node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
+        # node_hat = self.readout_node(node_gat_feat)
         
-        loss = self.loss(node_hat, strokes_label)
+        loss = self.loss(node_gat_feat, strokes_label)
         # loss_node = self.loss(node_hat, strokes_label)
         # loss_edge = self.loss(edge_hat, edges_label)
         # print(strokes_label)
         # loss = self.lambda1*loss_node + self.lambda2 * loss_edge
-        acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+        acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_gat_feat, dim=1).cpu().numpy())
         # acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
         # self.log('val_loss_node', loss_node)
         # self.log('val_loss_edge', loss_edge)
