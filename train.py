@@ -19,8 +19,8 @@ parser.add_argument('--num_workers', type=int, default=8)
 
 parser.add_argument('--lr', type=float, default=0.001)
 parser.add_argument('--dropout', type=float, default=0.6)
-parser.add_argument('--lambda1', type=float, default=0.5)
-parser.add_argument('--lambda2', type=float, default=0.5)
+parser.add_argument('--lambda1', type=float, default=0.8)
+parser.add_argument('--lambda2', type=float, default=0.6)
 
 parser.add_argument('--epoch', type=int, default=100)
 parser.add_argument('--accelerator', type=str, default="gpu")
@@ -47,10 +47,10 @@ dm = CROHMEDatamodule(
 )
 
 model = LitModel(
-    node_input_size = 100,
-    edge_input_size = 20,
+    node_input_size = args.stroke_emb_nb,
+    edge_input_size = args.rel_emb_nb * 4,
     gat_input_size = 114,
-    gat_hidden_size = 64,
+    gat_hidden_size = 512,
     gat_output_size = 128,
     gat_n_heads = 8,
     node_class_nb = 114,

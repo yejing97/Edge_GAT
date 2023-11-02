@@ -24,17 +24,19 @@ class EdgeGraphAttention(pl.LightningModule):
         if is_concat:
             assert out_features % n_heads == 0
             self.n_hidden = out_features // n_heads
+            # assert out_features % n_heads % 3 == 0
+            # self.n_hidden = out_features // n_heads // 3
         else:
             self.n_hidden = out_features
-
+            # self.n_hidden = out_features // 3
         self.linear_l = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
         self.linear_b = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
-
         if share_weights:
             self.linear_r = self.linear_l
         else:
             self.linear_r = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
-        self.attn = nn.Linear(self.n_hidden, 1, bias=False)
+        # self.attn = nn.Linear(self.n_hidden, 1, bias=False)
+        self.attn = nn.Linear(self.n_hidden * 3, 1, bias=False)
         self.activation = nn.LeakyReLU(negative_slope=leaky_relu_negative_slope)
         self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(dropout)
@@ -51,12 +53,17 @@ class EdgeGraphAttention(pl.LightningModule):
 
         g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=0)
 
-        g_sum = g_l_repeat + g_r_repeat_interleave + g_b
+        g_concat = torch.cat([g_l_repeat, g_r_repeat_interleave, g_b], dim=-1)
+
+        g_concat = g_concat.view(n_nodes, n_nodes, self.n_heads, self.n_hidden * 3)
+
+        # g_sum = g_l_repeat + g_r_repeat_interleave + g_b
         # g_sum = g_l_repeat + g_r_repeat_interleave
         
-        g_sum = g_sum.view(n_nodes, n_nodes, self.n_heads, self.n_hidden)
+        # g_sum = g_sum.view(n_nodes, n_nodes, self.n_heads, self.n_hidden)
 
-        e = self.attn(self.activation(g_sum))
+        # e = self.attn(self.activation(g_sum))
+        e = self.attn(self.activation(g_concat))
         e = e.squeeze(-1)
 
         # add self connection
