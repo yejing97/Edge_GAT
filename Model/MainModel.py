@@ -67,8 +67,8 @@ class MainModel(pl.LightningModule):
         print('readout_edge', get_parameter_number(self.readout_edge))
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
-        print('node_in_features', node_in_features.shape)
-        print('edge_in_features', edge_in_features.shape)
+        # print('node_in_features', node_in_features.shape)
+        # print('edge_in_features', edge_in_features.shape)
         node_emb_feat = self.node_emb(node_in_features.squeeze(0))
         edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
         # print('node_emb_feat', node_emb_feat.shape)
