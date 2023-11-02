@@ -16,8 +16,6 @@ class MainModel(pl.LightningModule):
             self,
             node_input_size: int,
             edge_input_size: int,
-            # node_emb_size: int,
-            # edge_emb_size: int,
             gat_input_size: int,
             gat_hidden_size: int,
             gat_output_size: int,
@@ -29,8 +27,6 @@ class MainModel(pl.LightningModule):
         super().__init__()
         self.node_input_size = node_input_size
         self.edge_input_size = edge_input_size
-        # self.node_emb_size = node_emb_size
-        # self.edge_input_size = edge_emb_size 
         self.gat_input_size = gat_input_size
         self.gat_hidden_size = gat_hidden_size
         self.gat_output_size = gat_output_size
@@ -48,41 +44,46 @@ class MainModel(pl.LightningModule):
 
 
 
-        # self.edge_gat = EdgeGraphAttention(self.gat_input_size, self.gat_output_size, self.gat_n_heads, self.dropout)
+        self.edge_gat1 = EdgeGraphAttention(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout = self.dropout)
+        self.edge_gat2 = EdgeGraphAttention(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout = self.dropout)
 
-        self.gat1 = GraphAttentionLayer(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout=self.dropout)
 
-        self.gat2 = GraphAttentionLayer(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout=self.dropout)
+        # self.gat1 = GraphAttentionLayer(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout=self.dropout)
+
+        # self.gat2 = GraphAttentionLayer(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout=self.dropout)
 
         # self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
         self.readout_edge = Readout(self.gat_output_size, self.edge_class_nb)
+        self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
 
-        self.readout_node = torch.nn.Linear(self.gat_input_size, self.node_class_nb)
+        # self.readout_node = torch.nn.Linear(self.gat_input_size, self.node_class_nb)
 
         print('node_emb', get_parameter_number(self.node_emb))
         print('edge_emb', get_parameter_number(self.edge_emb))
         # print('edge_gat', get_parameter_number(self.edge_gat))
-        print('gat1', get_parameter_number(self.gat1))
-        print('gat2', get_parameter_number(self.gat2))
+        print('edge_gat1', get_parameter_number(self.edge_gat1))
+        print('edge_gat2', get_parameter_number(self.edge_gat2))
         print('readout_node', get_parameter_number(self.readout_node))
         print('readout_edge', get_parameter_number(self.readout_edge))
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
+        print('node_in_features', node_in_features.shape)
+        print('edge_in_features', edge_in_features.shape)
         node_emb_feat = self.node_emb(node_in_features.squeeze(0))
-        # edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
-
-        # node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat.squeeze(0))
-        
+        edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
+        # print('node_emb_feat', node_emb_feat.shape)
+        # print('edge_emb_feat', edge_emb_feat.shape)
+        node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
+        node_gat_feat = self.activation(node_gat_feat)
+        edge_gat_feat = self.activation(edge_gat_feat)
+        # print('node_gat_feat', node_gat_feat.shape)
+        # print('edge_gat_feat', edge_gat_feat.shape)
+        node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
 
         # indices = torch.nonzero(adj_mat.reshape(-1)).squeeze()
         # print('pred',indices)
         # edge_gat_feat = edge_gat_feat.reshape(-1, self.gat_output_size)[indices]
 
-        node_gat_feat = self.gat1(node_emb_feat, adj_mat.unsqueeze(-1))
-        node_gat_feat = self.activation(node_gat_feat)
-        node_gat_feat = self.gat2(node_gat_feat, adj_mat.unsqueeze(-1))
-
         node_readout = self.readout_node(node_gat_feat)
-        # edge_readout = self.readout_edge(edge_gat_feat)
-        return node_readout, None
-        # return node_readout, edge_readout
+        edge_readout = self.readout_edge(edge_gat_feat)
+        return node_readout, edge_readout

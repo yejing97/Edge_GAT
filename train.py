@@ -8,7 +8,7 @@ import argparse
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--root_path', type=str, default='/home/xie-y/data/Edge_GAT/S100_R5_Speed_False/')
+parser.add_argument('--root_path', type=str, default='/home/xie-y/data/Edge_GAT/')
 parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 parser.add_argument('--stroke_emb_nb', type=int, default=100)
 parser.add_argument('--rel_emb_nb', type=int, default=5)
@@ -27,9 +27,12 @@ parser.add_argument('--accelerator', type=str, default="gpu")
 parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
 args = parser.parse_args()
 # device = 'gpu' if torch.cuda.is_available() else 'cpu'
-
+if args.device == 'cuda':
+    root_path = '/home/xie-y/data/Edge_GAT/'
+else:
+    root_path = '/home/e19b516g/yejing/data/data_for_graph/'
 npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed)
-npz_path = os.path.join(args.root_path, npz_name)
+npz_path = os.path.join(root_path, npz_name)
 if not os.path.exists(npz_path):
     os.makedirs(npz_path)
     make_data(os.path.join(args.root_path, 'INKML'), npz_path, args.stroke_emb_nb, args.rel_emb_nb, args.speed)

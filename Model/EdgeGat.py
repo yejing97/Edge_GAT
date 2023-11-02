@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 class EdgeGraphAttention(pl.LightningModule):
 
     def __init__(self, in_features: int, out_features: int, n_heads: int,
-                 is_concat: bool = False,
+                 is_concat: bool = True,
                  dropout: float = 0.6,
                  leaky_relu_negative_slope: float = 0.2,
                  share_weights: bool = False):
@@ -51,8 +51,8 @@ class EdgeGraphAttention(pl.LightningModule):
 
         g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=0)
 
-        # g_sum = g_l_repeat + g_r_repeat_interleave + g_b
-        g_sum = g_l_repeat + g_r_repeat_interleave
+        g_sum = g_l_repeat + g_r_repeat_interleave + g_b
+        # g_sum = g_l_repeat + g_r_repeat_interleave
         
         g_sum = g_sum.view(n_nodes, n_nodes, self.n_heads, self.n_hidden)
 
@@ -68,7 +68,7 @@ class EdgeGraphAttention(pl.LightningModule):
         assert adj_mat_self.shape[1] == 1 or adj_mat_self.shape[1] == n_nodes
         assert adj_mat_self.shape[2] == 1 or adj_mat_self.shape[2] == self.n_heads
 
-        e = e.masked_fill(adj_mat_self == 0, float(-1e9))
+        e = e.masked_fill(adj_mat == 0, float(-1e9))
 
 
         a = self.softmax(e)
@@ -81,10 +81,10 @@ class EdgeGraphAttention(pl.LightningModule):
         new_edge = torch.einsum('ijh,ijhf->ijhf', a, g_b.view(n_nodes, n_nodes, self.n_heads, self.n_hidden))
         # torch.set_printoptions(profile="full")
         # print(new_edge)
-        if self.is_concat:
-            return new_node.reshape(n_nodes, self.n_heads * self.n_hidden), new_edge.reshape(n_nodes, n_nodes, self.n_heads * self.n_hidden)
-        else:
-            return new_node.reshape(n_nodes, self.n_heads * self.n_hidden).mean(dim=1), new_edge.reshape(n_nodes, n_nodes, self.n_heads * self.n_hidden).mean(dim=2)
+        # if self.is_concat:
+        return new_node.reshape(n_nodes, self.n_heads * self.n_hidden), new_edge.reshape(n_nodes * n_nodes, self.n_heads * self.n_hidden)
+        # else:
+        #     return new_node.reshape(n_nodes, self.n_heads * self.n_hidden).mean(dim=1), new_edge.reshape(n_nodes, n_nodes, self.n_heads * self.n_hidden).mean(dim=2)
 
 
 class Readout(pl.LightningModule):
