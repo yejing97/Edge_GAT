@@ -89,16 +89,18 @@ def objective(trial: optuna.trial.Trial):
         accelerator=device,
         devices="auto",
         logger=logger,
-        callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node')]
+        callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node', mode='max')]
     )
     hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=node_gat_hidden_size, edge_gat_hidden_size=edge_gat_hidden_size, node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
     trainer.logger.log_hyperparams(hyperparameters)
     try:
         trainer.fit(model.to(device), dm)
+        return trainer.callback_metrics['val_acc_node'].item()
+
     except Exception as e:
         print(f"An exception occurred during training: {str(e)}")
+        return 0.0
 
-    return trainer.callback_metrics['val_acc_node'].item()
 
 
 if __name__ == "__main__":

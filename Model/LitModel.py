@@ -100,6 +100,7 @@ class LitModel(pl.LightningModule):
         self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
         self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+
         return loss
     
     def validation_step(self, batch, batch_idx):
@@ -115,13 +116,13 @@ class LitModel(pl.LightningModule):
 
         acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-        self.log('val_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=True, logger=True)
         self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=False, logger=True)
         self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=False, logger=True)
         self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
-        return node_hat, strokes_label, edge_hat, edges_label
+        return acc_node
     
     def on_validation_epoch_end(self) -> None:
         # return super().on_validation_epoch_end()
