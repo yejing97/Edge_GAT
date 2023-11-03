@@ -31,10 +31,10 @@ parser.add_argument('--accelerator', type=str, default="gpu")
 parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
 args = parser.parse_args()
 # device = 'gpu' if torch.cuda.is_available() else 'cpu'
-if args.device == 'cuda':
-    data_path = '/home/xie-y/data/Edge_GAT/'
-else:
+if args.device == 'cpu':
     data_path = '/home/e19b516g/yejing/data/data_for_graph/'
+else:
+    data_path = '/home/xie-y/data/Edge_GAT/'
 npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed)
 npz_path = os.path.join(data_path, npz_name)
 if not os.path.exists(npz_path):
