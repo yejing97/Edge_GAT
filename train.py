@@ -80,5 +80,5 @@ model = LitModel(
 )
 
 
-trainer = pl.Trainer(max_epochs=args.epoch, accelerator=args.device, devices=1, logger=logger)
+trainer = pl.Trainer(max_epochs=args.epoch, accelerator=args.device, devices="auto", logger=logger)
 trainer.fit(model.to(args.device), dm)
