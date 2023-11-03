@@ -89,6 +89,26 @@ model = LitModel(
     patience = args.patience
 )
 
+hyperparameters = dict(
+    node_input_size = args.stroke_emb_nb,
+    edge_input_size = args.rel_emb_nb * 4,
+    node_gat_input_size = 128,
+    edge_gat_input_size = 32,
+    node_gat_hidden_size = 512,
+    edge_gat_hidden_size = 256,
+    node_gat_output_size = 128,
+    edge_gat_output_size = 64,
+    gat_n_heads = 8,
+    node_class_nb = 114,
+    edge_class_nb = 14,
+    dropout = args.dropout,
+    lr = args.lr,
+    lambda1 = args.lambda1,
+    lambda2 = args.lambda2,
+    patience = args.patience,
+    min_delta = args.min_delta
+)
 
 trainer = pl.Trainer(max_epochs=args.epoch, accelerator=args.device, devices="auto", logger=logger)
+trainer.logger.log_hyperparams(hyperparameters)
 trainer.fit(model.to(args.device), dm)

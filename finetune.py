@@ -13,8 +13,10 @@ import sys
 
 
 def objective(trial: optuna.trial.Trial):
-    stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 50, 201, step=50)
-    rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 21, step=5)
+    # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 200, step=50)
+    # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
+    stroke_emb_nb = 100
+    rel_emb_nb = 5
     batch_size = trial.suggest_int('batch_size', 32, 257, step=32)
     lr = trial.suggest_float('lr', 0.00001, 0.1)
     lambda1 = trial.suggest_float('lambda1', 0, 1)
@@ -30,7 +32,7 @@ def objective(trial: optuna.trial.Trial):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
-    epoch = 500
+    epoch = 300
 
     if device == 'cpu':
         data_path = '/home/e19b516g/yejing/data/data_for_graph/'
