@@ -28,9 +28,12 @@ class LitModel(pl.LightningModule):
         self.edge_class_nb = args['edge_class_nb']
         self.dropout = args['dropout']
         self.d = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.ckpt_path = args['ckpt_path']
+        # self.ckpt_path = args['ckpt_path']
+        self.results_path = args['results_path']
 
         self.loss = torch.nn.CrossEntropyLoss()
+
+        self.validation_step_outputs = []
         # self.node_emb_model = XceptionTime(self.node_input_size, self.gat_input_size)
         # if os.path.isfile(self.ckpt_path):
         #     self.node_emb_model.load_state_dict(self.load_ckpt(self.ckpt_path), strict=False)
@@ -85,9 +88,9 @@ class LitModel(pl.LightningModule):
         loss_edge = self.loss(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
 
-        self.log('train_loss_node', loss_node)
-        self.log('train_loss_edge', loss_edge)
-        self.log('train_loss', loss)
+        self.log('train_loss_node', loss_node, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss_edge', loss_edge, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
@@ -101,13 +104,21 @@ class LitModel(pl.LightningModule):
 
         acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-        self.log('val_loss_node', loss_node)
-        self.log('val_loss_edge', loss_edge)
-        self.log('val_loss', loss)
-        self.log('val_acc_node', acc_node)
-        self.log('val_acc_edge', acc_edge)
-        return loss
+        self.log('val_loss_node', loss_node, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_loss_edge', loss_edge, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_acc_node', acc_node, on_step=True, on_epoch=True, prog_bar=False, logger=True)
+        self.log('val_acc_edge', acc_edge, on_step=True, on_epoch=True, prog_bar=False, logger=True)
+        self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
+        return node_hat, strokes_label, edge_hat, edges_label
     
+    def on_validation_epoch_end(self) -> None:
+        # return super().on_validation_epoch_end()
+        all_preds = self.validation_step_outputs
+        epoch_id = self.current_epoch
+        torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
+        self.validation_step_outputs.clear()
+        # node_preds, node_labels, edge_preds, edge_labels = all_preds
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return optimizer

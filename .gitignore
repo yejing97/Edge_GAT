@@ -1,4 +1,6 @@
 lightning_logs/
 tb_logs/
 pretrain_logs/
+logs/
+val_results/
 **/__pycache__
