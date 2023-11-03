@@ -98,6 +98,8 @@ class LitModel(pl.LightningModule):
 
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
 
+        edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+
         loss_node = self.loss(node_hat, strokes_label)
         loss_edge = self.loss(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
@@ -116,7 +118,8 @@ class LitModel(pl.LightningModule):
         # return super().on_validation_epoch_end()
         all_preds = self.validation_step_outputs
         epoch_id = self.current_epoch
-        torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
+        if epoch_id % 10 == 0:
+            torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
         self.validation_step_outputs.clear()
         # node_preds, node_labels, edge_preds, edge_labels = all_preds
     def configure_optimizers(self):
