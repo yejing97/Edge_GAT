@@ -20,13 +20,15 @@ parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--speed', type=bool, default=False)
 parser.add_argument('--shuffle', type=bool, default=True)
 parser.add_argument('--num_workers', type=int, default=8)
+parser.add_argument('--min_delta', type=float, default=0.00001)
+parser.add_argument('--patience', type=int, default=30)
 
-parser.add_argument('--lr', type=float, default=0.001)
+parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--dropout', type=float, default=0.6)
-parser.add_argument('--lambda1', type=float, default=0.8)
-parser.add_argument('--lambda2', type=float, default=0.6)
+parser.add_argument('--lambda1', type=float, default=0.5)
+parser.add_argument('--lambda2', type=float, default=1)
 
-parser.add_argument('--epoch', type=int, default=100)
+parser.add_argument('--epoch', type=int, default=300)
 parser.add_argument('--accelerator', type=str, default="gpu")
 parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
 args = parser.parse_args()
@@ -76,7 +78,9 @@ model = LitModel(
     lambda1 = args.lambda1,
     lambda2 =  args.lambda2,
     lr = args.lr,
-    device = args.device
+    device = args.device,
+    min_delta = args.min_delta,
+    patience = args.patience
 )
 
 

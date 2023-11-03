@@ -27,6 +27,8 @@ class LitModel(pl.LightningModule):
         self.node_class_nb = args['node_class_nb']
         self.edge_class_nb = args['edge_class_nb']
         self.dropout = args['dropout']
+        self.patience = args['patience']
+        self.min_delta = args['min_delta']
         self.d = 'cuda' if torch.cuda.is_available() else 'cpu'
         # self.ckpt_path = args['ckpt_path']
         self.results_path = args['results_path']
@@ -88,9 +90,9 @@ class LitModel(pl.LightningModule):
         loss_edge = self.loss(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
 
-        self.log('train_loss_node', loss_node, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('train_loss_edge', loss_edge, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
@@ -124,5 +126,10 @@ class LitModel(pl.LightningModule):
         # node_preds, node_labels, edge_preds, edge_labels = all_preds
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        return optimizer
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.patience, min_lr=self.min_delta, verbose=True),
+            'monitor': 'val_acc_node',
+            'frequency': self.trainer.check_val_every_n_epoch
+        }
     
