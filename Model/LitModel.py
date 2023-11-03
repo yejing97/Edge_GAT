@@ -20,9 +20,15 @@ class LitModel(pl.LightningModule):
         self.lr = args['lr']
         self.node_input_size = args['node_input_size']
         self.edge_input_size = args['edge_input_size']
-        self.gat_input_size = args['gat_input_size']
-        self.gat_hidden_size = args['gat_hidden_size']
-        self.gat_output_size = args['gat_output_size']
+        # self.gat_input_size = args['gat_input_size']
+        self.node_gat_input_size = args['node_gat_input_size']
+        self.edge_gat_input_size = args['edge_gat_input_size']
+        # self.gat_hidden_size = args['gat_hidden_size']
+        self.node_gat_hidden_size = args['node_gat_hidden_size']
+        self.edge_gat_hidden_size = args['edge_gat_hidden_size']
+        # self.gat_output_size = args['gat_output_size']
+        self.node_gat_output_size = args['node_gat_output_size']
+        self.edge_gat_output_size = args['edge_gat_output_size']
         self.gat_n_heads = args['gat_n_heads']
         self.node_class_nb = args['node_class_nb']
         self.edge_class_nb = args['edge_class_nb']
@@ -43,7 +49,8 @@ class LitModel(pl.LightningModule):
         # self.gat2 = GraphAttentionLayer(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout=self.dropout)
         # self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
 
-        self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
+        # self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
+        self.model = MainModel(self.node_input_size, self.edge_input_size, self.node_gat_input_size, self.edge_gat_input_size, self.node_gat_hidden_size, self.edge_gat_hidden_size, self.node_gat_output_size, self.edge_gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
     
     def load_ckpt(self, ckpt_path):
         ckpt = torch.load(ckpt_path, map_location=self.d)
@@ -108,11 +115,11 @@ class LitModel(pl.LightningModule):
 
         acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-        self.log('val_loss_node', loss_node, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_loss_edge', loss_edge, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_acc_node', acc_node, on_step=True, on_epoch=True, prog_bar=False, logger=True)
-        self.log('val_acc_edge', acc_edge, on_step=True, on_epoch=True, prog_bar=False, logger=True)
+        self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=False, logger=True)
+        self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=False, logger=True)
         self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
         return node_hat, strokes_label, edge_hat, edges_label
     

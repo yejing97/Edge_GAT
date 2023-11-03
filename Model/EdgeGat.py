@@ -9,7 +9,12 @@ import pytorch_lightning as pl
 
 class EdgeGraphAttention(pl.LightningModule):
 
-    def __init__(self, in_features: int, out_features: int, n_heads: int,
+    def __init__(self, 
+                 node_in_features: int, 
+                 edge_in_features: int,
+                 node_out_features: int,
+                 edge_out_features: int,
+                 n_heads: int,
                  is_concat: bool = True,
                  dropout: float = 0.6,
                  leaky_relu_negative_slope: float = 0.2,
@@ -20,23 +25,29 @@ class EdgeGraphAttention(pl.LightningModule):
         self.is_concat = is_concat
         self.n_heads = n_heads
         self.share_weights = share_weights
+        # self.node_out_features = node_out_features
+        # self.edge_out_features = edge_out_features
 
         if is_concat:
-            assert out_features % n_heads == 0
-            self.n_hidden = out_features // n_heads
-            # assert out_features % n_heads % 3 == 0
-            # self.n_hidden = out_features // n_heads // 3
+            # assert out_features % n_heads == 0
+            # self.n_hidden = out_features // n_heads
+            assert node_out_features % n_heads == 0 and edge_out_features % n_heads == 0
+            self.n_hidden_node = node_out_features // n_heads
+            self.n_hidden_edge = edge_out_features // n_heads
+            self.n_hidden_mix = self.n_hidden_node * 2 + self.n_hidden_edge
         else:
-            self.n_hidden = out_features
+            self.n_hidden_node = node_out_features
+            self.n_hidden_edge = edge_out_features
+            self.n_hidden_mix = self.n_hidden_node * 2 + self.n_hidden_edge
             # self.n_hidden = out_features // 3
-        self.linear_l = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
-        self.linear_b = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
+        self.linear_l = nn.Linear(node_in_features, self.n_hidden_node * n_heads, bias=False)
+        self.linear_b = nn.Linear(edge_in_features, self.n_hidden_edge * n_heads, bias=False)
         if share_weights:
             self.linear_r = self.linear_l
         else:
-            self.linear_r = nn.Linear(in_features, self.n_hidden * n_heads, bias=False)
+            self.linear_r = nn.Linear(node_in_features, self.n_hidden_node * n_heads, bias=False)
         # self.attn = nn.Linear(self.n_hidden, 1, bias=False)
-        self.attn = nn.Linear(self.n_hidden * 3, 1, bias=False)
+        self.attn = nn.Linear(self.n_hidden_node * 2 + self.n_hidden_edge, 1, bias=False)
         self.activation = nn.LeakyReLU(negative_slope=leaky_relu_negative_slope)
         self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(dropout)
@@ -45,17 +56,17 @@ class EdgeGraphAttention(pl.LightningModule):
 
         n_nodes = h.shape[0]
 
-        g_l = self.linear_l(h).view(n_nodes, self.n_heads, self.n_hidden)
-        g_r = self.linear_r(h).view(n_nodes, self.n_heads, self.n_hidden)
+        g_l = self.linear_l(h).view(n_nodes, self.n_heads, self.n_hidden_node)
+        g_r = self.linear_r(h).view(n_nodes, self.n_heads, self.n_hidden_node)
 
-        g_b = self.linear_b(b).view(n_nodes*n_nodes, self.n_heads, self.n_hidden)
+        g_b = self.linear_b(b).view(n_nodes*n_nodes, self.n_heads, self.n_hidden_edge)
         g_l_repeat = g_l.repeat(n_nodes, 1, 1)
 
         g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=0)
 
         g_concat = torch.cat([g_l_repeat, g_r_repeat_interleave, g_b], dim=-1)
 
-        g_concat = g_concat.view(n_nodes, n_nodes, self.n_heads, self.n_hidden * 3)
+        g_concat = g_concat.view(n_nodes, n_nodes, self.n_heads, self.n_hidden_mix)
 
         # g_sum = g_l_repeat + g_r_repeat_interleave + g_b
         # g_sum = g_l_repeat + g_r_repeat_interleave
@@ -85,11 +96,11 @@ class EdgeGraphAttention(pl.LightningModule):
         #h_{q} = \sum_{i=0}^{N}( \alpha  ^{i,j} \cdot W_{h}\cdot \sum_{j\in \mathcal{N} _{i}} h_{q-1}^{j})
         new_node = torch.einsum('ijh,jhf->ihf', a, g_r)
         # b_{q}= \sum_{i,j=0}^{N}( \alpha  ^{i,j} \cdot W_{b}\cdot b_{q-1}^{i,j})
-        new_edge = torch.einsum('ijh,ijhf->ijhf', a, g_b.view(n_nodes, n_nodes, self.n_heads, self.n_hidden))
+        new_edge = torch.einsum('ijh,ijhf->ijhf', a, g_b.view(n_nodes, n_nodes, self.n_heads, self.n_hidden_edge))
         # torch.set_printoptions(profile="full")
         # print(new_edge)
         # if self.is_concat:
-        return new_node.reshape(n_nodes, self.n_heads * self.n_hidden), new_edge.reshape(n_nodes * n_nodes, self.n_heads * self.n_hidden)
+        return new_node.reshape(n_nodes, self.n_heads * self.n_hidden_node), new_edge.reshape(n_nodes * n_nodes, self.n_heads * self.n_hidden_edge)
         # else:
         #     return new_node.reshape(n_nodes, self.n_heads * self.n_hidden).mean(dim=1), new_edge.reshape(n_nodes, n_nodes, self.n_heads * self.n_hidden).mean(dim=2)
 

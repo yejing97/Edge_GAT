@@ -16,9 +16,15 @@ class MainModel(pl.LightningModule):
             self,
             node_input_size: int,
             edge_input_size: int,
-            gat_input_size: int,
-            gat_hidden_size: int,
-            gat_output_size: int,
+            # gat_input_size: int,
+            node_gat_input_size: int,
+            edge_gat_input_size: int,
+            # gat_hidden_size: int,
+            node_gat_hidden_size: int,
+            edge_gat_hidden_size: int,
+            # gat_output_size: int,
+            node_gat_output_size: int,
+            edge_gat_output_size: int,
             gat_n_heads: int,
             node_class_nb: int,
             edge_class_nb: int,
@@ -27,40 +33,40 @@ class MainModel(pl.LightningModule):
         super().__init__()
         self.node_input_size = node_input_size
         self.edge_input_size = edge_input_size
-        self.gat_input_size = gat_input_size
-        self.gat_hidden_size = gat_hidden_size
-        self.gat_output_size = gat_output_size
-        self.gat_n_heads = gat_n_heads
-        self.node_class_nb = node_class_nb
-        self.edge_class_nb = edge_class_nb
-        self.dropout = dropout
+        # self.gat_input_size = gat_input_size
+        # self.gat_hidden_size = gat_hidden_size
+        # self.gat_output_size = gat_output_size
+
+        # self.node_gat_input_size = node_gat_input_size
+        # self.edge_gat_input_size = edge_gat_input_size
+        # self.node_gat_hidden_size = node_gat_hidden_size
+        # self.edge_gat_hidden_size = edge_gat_hidden_size
+        # self.node_gat_output_size = node_gat_output_size
+        # self.edge_gat_output_size = edge_gat_output_size
+        # self.gat_n_heads = gat_n_heads
+        # self.node_class_nb = node_class_nb
+        # self.edge_class_nb = edge_class_nb
+        # self.dropout = dropout
 
         self.softmax1 = torch.nn.Softmax(dim=1)
         self.softmax2 = torch.nn.Softmax(dim=2)
-        self.activation = torch.nn.ReLU()
+        self.activation = torch.nn.LeakyReLU()
 
-        self.node_emb = XceptionTime(self.node_input_size, self.node_class_nb)
-        self.edge_emb = torch.nn.Linear(self.edge_input_size, self.gat_input_size)
-
-
-
-        self.edge_gat1 = EdgeGraphAttention(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout = self.dropout)
-        self.edge_gat2 = EdgeGraphAttention(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout = self.dropout)
+        self.node_emb = XceptionTime(node_input_size, node_gat_input_size)
+        self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_input_size)
 
 
-        # self.gat1 = GraphAttentionLayer(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout=self.dropout)
 
-        # self.gat2 = GraphAttentionLayer(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout=self.dropout)
+        # self.edge_gat1 = EdgeGraphAttention(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout = self.dropout)
+        self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size, edge_gat_hidden_size, gat_n_heads, dropout = dropout)
+        # self.edge_gat2 = EdgeGraphAttention(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout = self.dropout)
+        self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size, edge_gat_hidden_size, node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
 
-        # self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
-        self.readout_edge = Readout(self.gat_output_size, self.edge_class_nb)
-        self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
-
-        # self.readout_node = torch.nn.Linear(self.gat_input_size, self.node_class_nb)
+        self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
+        self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
         print('node_emb', get_parameter_number(self.node_emb))
         print('edge_emb', get_parameter_number(self.edge_emb))
-        # print('edge_gat', get_parameter_number(self.edge_gat))
         print('edge_gat1', get_parameter_number(self.edge_gat1))
         print('edge_gat2', get_parameter_number(self.edge_gat2))
         print('readout_node', get_parameter_number(self.readout_node))
@@ -80,9 +86,6 @@ class MainModel(pl.LightningModule):
         # print('edge_gat_feat', edge_gat_feat.shape)
         node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
 
-        # indices = torch.nonzero(adj_mat.reshape(-1)).squeeze()
-        # print('pred',indices)
-        # edge_gat_feat = edge_gat_feat.reshape(-1, self.gat_output_size)[indices]
 
         node_readout = self.readout_node(node_gat_feat)
         edge_readout = self.readout_edge(edge_gat_feat)
