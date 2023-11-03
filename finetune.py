@@ -13,19 +13,19 @@ import sys
 
 
 def objective(trial: optuna.trial.Trial):
-    stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 20, 50, 100, 200)
-    rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 10, 20, 30)
-    batch_size = trial.suggest_int('batch_size', 32, 64, 128, 256)
-    lr = trial.suggest_float('lr', 0.00001, 0.0001, 0.001, 0.01, 0.1)
-    lambda1 = trial.suggest_float('lambda1', 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
+    stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 50, 200)
+    rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 20)
+    batch_size = trial.suggest_int('batch_size', 32, 256)
+    lr = trial.suggest_float('lr', 0.00001, 0.1)
+    lambda1 = trial.suggest_float('lambda1', 0, 1)
     lambda2 = 1 - lambda1
-    dropout = trial.suggest_float('dropout', 0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
-    node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 64, 128, 256)
-    edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 64, 128, 256)
-    node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 128, 256)
-    edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 128, 256)
-    node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 64, 128, 256)
-    edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 64, 128, 256)
+    dropout = trial.suggest_float('dropout', 0.1, 0.6)
+    node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 256)
+    edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 256)
+    node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 256)
+    edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 256)
+    node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 256)
+    edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 256)
     gat_n_heads = trial.suggest_int('gat_n_heads', 4, 8)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
