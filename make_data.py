@@ -1,19 +1,22 @@
+import sys
+import os
+
 from Preprocessing.load import load_gt
 import Preprocessing.normalization as normalization
 import Preprocessing.los as los
 import Preprocessing.fuzzy_relation as fuzzy_relation
 import argparse
-import os
 import numpy as np
+
 # from tempfile import TemporaryFile
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('--root_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/')
-# parser.add_argument('--stroke_emb_nb', type=int, default=100)
-# parser.add_argument('--rel_emb_nb', type=int, default=5)
-# # parser.add_argument('--tgt_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/npz')
-# args = parser.parse_args()
-# inkml_path = os.path.join(args.root_path, 'INKML')
+parser = argparse.ArgumentParser()
+parser.add_argument('--root_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/')
+parser.add_argument('--stroke_emb_nb', type=int, default=100)
+parser.add_argument('--rel_emb_nb', type=int, default=5)
+# parser.add_argument('--tgt_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/npz')
+args = parser.parse_args()
+inkml_path = os.path.join(args.root_path, 'INKML')
 # lg_path = os.path.join(args.root_path, 'LG')
 # npz_path = os.path.join(args.root_path, 'npz')
 
@@ -75,3 +78,13 @@ def make_data(inkml_path, npz_path, stroke_emb_nb, rel_emb_nb, speed):
     make_batch_npz('train', inkml_path, npz_path, stroke_emb_nb, rel_emb_nb, speed)
     make_batch_npz('val', inkml_path, npz_path, stroke_emb_nb, rel_emb_nb, speed)
     make_batch_npz('test', inkml_path, npz_path, stroke_emb_nb, rel_emb_nb, speed)
+
+if __name__ == '__main__':
+    S = [50, 100, 150, 200]
+    R = [5, 10]
+    for s in S:
+        for r in R:
+            npz_name = 'S'+ str(s) + '_R' + str(r) + '_Speed_' + str(False)
+            npz_path = os.path.join(args.root_path, npz_name)
+            if not os.path.exists(npz_path):
+                make_data(inkml_path, npz_path, s, r, False)
