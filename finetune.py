@@ -82,6 +82,7 @@ def objective(trial: optuna.trial.Trial):
         shuffle = True,
         batch_size = batch_size,
         num_workers = 8,
+        max_node = 16,
         reload_dataloaders_every_n_epochs = 1
     )
     early_stopping = pl.callbacks.EarlyStopping(

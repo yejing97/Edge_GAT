@@ -5,3 +5,4 @@ logs/
 val_results/
 finetunning/
 **/__pycache__
+nohup.out
