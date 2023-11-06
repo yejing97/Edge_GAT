@@ -10,7 +10,6 @@ class CROHMEDataset(torch.utils.data.Dataset):
         self.batch_size = batch_size
         self.data_list = self.make_data_list(max_node)
         self.group_list, self.batch_node_nb, self.batch_edge_nb = self.make_group_list()
-        print(self.group_list)
         self.node_emb_nb = int(root_path.split('/')[-1].split('_')[0].split('S')[1])
         self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1])
 
@@ -43,7 +42,6 @@ class CROHMEDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         batch_list = self.group_list[index]
-        print(batch_list)
         batch_strokes_emb = torch.zeros((self.batch_node_nb[index], self.node_emb_nb, 2))
         batch_edges_emb = torch.zeros((self.batch_node_nb[index], self.batch_node_nb[index], 4, self.rel_emb_nb))
         batch_stroke_labels = torch.zeros((self.batch_node_nb[index]))

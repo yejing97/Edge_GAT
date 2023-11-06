@@ -5,7 +5,6 @@ from Dataset.Dataset import CROHMEDataset
 class CROHMEDatamodule(pl.LightningDataModule):
     def __init__(self, **args) -> None:
         super().__init__()
-        print(args)
         self.root_path = args['root_path']
         self.shuffle = args['shuffle']
         self.num_workers = args['num_workers']
