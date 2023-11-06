@@ -3,15 +3,25 @@ import os
 import numpy as np
 
 class CROHMEDataset(torch.utils.data.Dataset):
-    def __init__(self, data_type, root_path, batch_size):
+    def __init__(self, data_type, root_path, batch_size, max_node):
         super().__init__()
         self.data_type = data_type
         self.data_path = os.path.join(root_path, self.data_type)
         self.batch_size = batch_size
-        self.data_list = os.listdir(self.data_path)
+        self.data_list = self.make_data_list(max_node)
         self.group_list, self.batch_node_nb, self.batch_edge_nb = self.make_group_list()
         self.node_emb_nb = int(root_path.split('/')[-1].split('_')[0].split('S')[1])
         self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1])
+
+    def make_data_list(self, max_node):
+        if max_node == -1:
+            return os.listdir(self.data_path)
+        else:
+            data_list = []
+            for name in os.listdir(self.data_path):
+                if int(name.split('E')[0].split('N')[1]) <= max_node:
+                    data_list.append(name)
+            return data_list
 
     def make_group_list(self):
         node_nb = []
