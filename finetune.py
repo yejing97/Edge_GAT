@@ -30,7 +30,7 @@ def objective(trial: optuna.trial.Trial):
     edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 257, step=32)
     gat_n_heads = trial.suggest_int('gat_n_heads', 4, 9, step=4)
 
-    device = 'gpu' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
     epoch = 300
 
@@ -86,8 +86,8 @@ def objective(trial: optuna.trial.Trial):
     )
     trainer = pl.Trainer(
         max_epochs=epoch,
-        accelerator=device,
-        devices='auto',
+        accelerator="auto",
+        devices=1,
         logger=logger,
         callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node')]
     )
