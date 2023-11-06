@@ -84,12 +84,20 @@ def objective(trial: optuna.trial.Trial):
         num_workers = 8,
         reload_dataloaders_every_n_epochs = 1
     )
+    early_stopping = pl.callbacks.EarlyStopping(
+        monitor='val_acc_node',
+        min_delta=0.00001,
+        patience=20,
+        verbose=False,
+        mode='max'
+    )
+
     trainer = pl.Trainer(
         max_epochs=epoch,
         accelerator="auto",
         devices=1,
         logger=logger,
-        callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node')]
+        callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
     )
     hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=node_gat_hidden_size, edge_gat_hidden_size=edge_gat_hidden_size, node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
     trainer.logger.log_hyperparams(hyperparameters)

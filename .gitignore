@@ -3,4 +3,5 @@ tb_logs/
 pretrain_logs/
 logs/
 val_results/
+finetunning/
 **/__pycache__
