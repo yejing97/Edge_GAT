@@ -1,6 +1,6 @@
 from Model.LitModel import LitModel
 from Dataset.Datamodule import CROHMEDatamodule
-from Preprocessing.make_data import make_data
+from make_data import make_data
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
