@@ -17,8 +17,8 @@ def objective(trial: optuna.trial.Trial):
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     stroke_emb_nb = 100
     rel_emb_nb = 5
-    batch_size = trial.suggest_int('batch_size', 32, 257, step=32)
-    lr = trial.suggest_float('lr', 0.00001, 0.1)
+    batch_size = trial.suggest_int('batch_size', 64, 257, step=64)
+    lr = trial.suggest_float('lr', 0.00001, 0.01)
     lambda1 = trial.suggest_float('lambda1', 0, 1)
     lambda2 = 1 - lambda1
     dropout = trial.suggest_float('dropout', 0.1, 0.6)
@@ -101,13 +101,13 @@ def objective(trial: optuna.trial.Trial):
     )
     hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=node_gat_hidden_size, edge_gat_hidden_size=edge_gat_hidden_size, node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
     trainer.logger.log_hyperparams(hyperparameters)
-    # try:
-    trainer.fit(model.to(device), dm)
-    return trainer.callback_metrics['val_acc_node'].item()
+    try:
+        trainer.fit(model.to(device), dm)
+        return trainer.callback_metrics['val_acc_node'].item()
 
-    # except Exception as e:
-    #     print(f"An exception occurred during training: {str(e)}")
-    #     return 0.0
+    except Exception as e:
+        print(f"An exception occurred during training: {str(e)}")
+        return 0.0
 
 
 
