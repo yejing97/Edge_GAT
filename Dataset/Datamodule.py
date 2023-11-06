@@ -20,8 +20,8 @@ class CROHMEDatamodule(pl.LightningDataModule):
     
     def setup(self, stage: str):
         self.dataset_train = CROHMEDataset('train', self.root_path, self.batch_size, self.max_node)
-        self.dataset_val = CROHMEDataset('val', self.root_path, 1, self.max_node)
-        self.dataset_test = CROHMEDataset('test', self.root_path, 1, self.max_node)
+        self.dataset_val = CROHMEDataset('val', self.root_path, self.batch_size, self.max_node)
+        self.dataset_test = CROHMEDataset('test', self.root_path, self.batch_size, self.max_node)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
