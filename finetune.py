@@ -30,7 +30,7 @@ def objective(trial: optuna.trial.Trial):
     edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 257, step=32)
     gat_n_heads = trial.suggest_int('gat_n_heads', 4, 9, step=4)
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'gpu' if torch.cuda.is_available() else 'cpu'
     speed = False
     epoch = 300
 
@@ -54,8 +54,8 @@ def objective(trial: optuna.trial.Trial):
         version = 0
     else:
         version = len(os.listdir(val_results_path))
-    val_results_path = os.path.join(val_results_path, 'version_' + str(version))
-    os.makedirs(val_results_path)
+    val_results_version = os.path.join(val_results_path, 'version_' + str(version))
+    os.makedirs(val_results_version)
 
     model = LitModel(
         node_input_size = stroke_emb_nb,
@@ -75,7 +75,7 @@ def objective(trial: optuna.trial.Trial):
         lambda2 = lambda2,
         patience = 30,
         min_delta = 0.00001,
-        results_path = results_path
+        results_path = val_results_version
     )
     dm = CROHMEDatamodule(
         root_path = npz_path,
@@ -87,19 +87,19 @@ def objective(trial: optuna.trial.Trial):
     trainer = pl.Trainer(
         max_epochs=epoch,
         accelerator=device,
-        devices="auto",
+        devices='auto',
         logger=logger,
         callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node')]
     )
     hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=node_gat_hidden_size, edge_gat_hidden_size=edge_gat_hidden_size, node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
     trainer.logger.log_hyperparams(hyperparameters)
-    try:
-        trainer.fit(model.to(device), dm)
-        return trainer.callback_metrics['val_acc_node'].item()
+    # try:
+    trainer.fit(model.to(device), dm)
+    return trainer.callback_metrics['val_acc_node'].item()
 
-    except Exception as e:
-        print(f"An exception occurred during training: {str(e)}")
-        return 0.0
+    # except Exception as e:
+    #     print(f"An exception occurred during training: {str(e)}")
+    #     return 0.0
 
 
 
