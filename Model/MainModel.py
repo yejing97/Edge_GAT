@@ -58,6 +58,7 @@ class MainModel(pl.LightningModule):
 
 
         # self.edge_gat1 = EdgeGraphAttention(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout = self.dropout)
+        print('node_gat_hidden_size', node_gat_hidden_size)
         self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size[0], edge_gat_hidden_size[0], gat_n_heads, dropout = dropout)
         self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size[0], edge_gat_hidden_size[0], node_gat_hidden_size[1], edge_gat_hidden_size[1], gat_n_heads, dropout = dropout)
         self.edge_gat3 = EdgeGraphAttention(node_gat_hidden_size[1], edge_gat_hidden_size[1], node_gat_hidden_size[2], edge_gat_hidden_size[2], gat_n_heads, dropout = dropout)
@@ -88,7 +89,18 @@ class MainModel(pl.LightningModule):
         # print('node_gat_feat', node_gat_feat.shape)
         # print('edge_gat_feat', edge_gat_feat.shape)
         node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
-
+        node_gat_feat = self.activation(node_gat_feat)
+        edge_gat_feat = self.activation(edge_gat_feat)
+        node_gat_feat, edge_gat_feat = self.edge_gat3(node_gat_feat, edge_gat_feat, adj_mat)
+        node_gat_feat = self.activation(node_gat_feat)
+        edge_gat_feat = self.activation(edge_gat_feat)
+        node_gat_feat, edge_gat_feat = self.edge_gat4(node_gat_feat, edge_gat_feat, adj_mat)
+        node_gat_feat = self.activation(node_gat_feat)
+        edge_gat_feat = self.activation(edge_gat_feat)
+        node_gat_feat, edge_gat_feat = self.edge_gat5(node_gat_feat, edge_gat_feat, adj_mat)
+        node_gat_feat = self.activation(node_gat_feat)
+        edge_gat_feat = self.activation(edge_gat_feat)
+        node_gat_feat, edge_gat_feat = self.edge_gat6(node_gat_feat, edge_gat_feat, adj_mat)
 
         node_readout = self.readout_node(node_gat_feat)
         edge_readout = self.readout_edge(edge_gat_feat)
