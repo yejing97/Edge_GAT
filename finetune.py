@@ -24,11 +24,11 @@ def objective(trial: optuna.trial.Trial):
     dropout = trial.suggest_float('dropout', 0.1, 0.6, step=0.1)
     node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 257, step=32)
     edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 257, step=32)
-    node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 257, step=32)
-    edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 257, step=32)
+    # node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 257, step=32)
+    # edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 257, step=32)
     node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 257, step=32)
     edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 257, step=32)
-    gat_n_heads = trial.suggest_int('gat_n_heads', 8, 17, step=8)
+    gat_n_heads = trial.suggest_int('gat_n_heads', 4, 9, step=4)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
@@ -62,8 +62,8 @@ def objective(trial: optuna.trial.Trial):
         edge_input_size = rel_emb_nb * 4,
         node_gat_input_size = node_gat_input_size,
         edge_gat_input_size = edge_gat_input_size,
-        node_gat_hidden_size = node_gat_hidden_size,
-        edge_gat_hidden_size = edge_gat_hidden_size,
+        node_gat_hidden_size = [512, 256, 128, 256, 512],
+        edge_gat_hidden_size = [256, 128, 64, 128, 256],
         node_gat_output_size = node_gat_output_size,
         edge_gat_output_size = edge_gat_output_size,
         gat_n_heads = gat_n_heads,
@@ -100,7 +100,7 @@ def objective(trial: optuna.trial.Trial):
         logger=logger,
         callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
     )
-    hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=node_gat_hidden_size, edge_gat_hidden_size=edge_gat_hidden_size, node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
+    hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=[512, 256, 128, 256, 512], edge_gat_hidden_size=[256, 128, 64, 128, 256], node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
     trainer.logger.log_hyperparams(hyperparameters)
     try:
         trainer.fit(model.to(device), dm)

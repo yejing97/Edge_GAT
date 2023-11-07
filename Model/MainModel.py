@@ -58,19 +58,22 @@ class MainModel(pl.LightningModule):
 
 
         # self.edge_gat1 = EdgeGraphAttention(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout = self.dropout)
-        self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size, edge_gat_hidden_size, gat_n_heads, dropout = dropout)
-        # self.edge_gat2 = EdgeGraphAttention(self.gat_hidden_size, self.gat_output_size, 1, is_concat=False, dropout = self.dropout)
-        self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size, edge_gat_hidden_size, node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
+        self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size[0], edge_gat_hidden_size[0], gat_n_heads[0], dropout = dropout)
+        self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size[0], edge_gat_hidden_size[0], node_gat_hidden_size[1], edge_gat_hidden_size[1], gat_n_heads[1], dropout = dropout)
+        self.edge_gat3 = EdgeGraphAttention(node_gat_hidden_size[1], edge_gat_hidden_size[1], node_gat_hidden_size[2], edge_gat_hidden_size[2], gat_n_heads[2], dropout = dropout)
+        self.edge_gat4 = EdgeGraphAttention(node_gat_hidden_size[2], edge_gat_hidden_size[2], node_gat_hidden_size[3], edge_gat_hidden_size[3], gat_n_heads[3], dropout = dropout)
+        self.edge_gat5 = EdgeGraphAttention(node_gat_hidden_size[3], edge_gat_hidden_size[3], node_gat_hidden_size[4], edge_gat_hidden_size[4], gat_n_heads[4], dropout = dropout)
+        self.edge_gat6 = EdgeGraphAttention(node_gat_hidden_size[4], edge_gat_hidden_size[4], node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
 
         self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
         self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
-        print('node_emb', get_parameter_number(self.node_emb))
-        print('edge_emb', get_parameter_number(self.edge_emb))
-        print('edge_gat1', get_parameter_number(self.edge_gat1))
-        print('edge_gat2', get_parameter_number(self.edge_gat2))
-        print('readout_node', get_parameter_number(self.readout_node))
-        print('readout_edge', get_parameter_number(self.readout_edge))
+        # print('node_emb', get_parameter_number(self.node_emb))
+        # print('edge_emb', get_parameter_number(self.edge_emb))
+        # print('edge_gat1', get_parameter_number(self.edge_gat1))
+        # print('edge_gat2', get_parameter_number(self.edge_gat2))
+        # print('readout_node', get_parameter_number(self.readout_node))
+        # print('readout_edge', get_parameter_number(self.readout_edge))
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
         # print('node_in_features', node_in_features.shape)
