@@ -24,10 +24,10 @@ parser.add_argument('--num_workers', type=int, default=8)
 parser.add_argument('--min_delta', type=float, default=0.00001)
 parser.add_argument('--patience', type=int, default=30)
 
-parser.add_argument('--lr', type=float, default=0.01)
-parser.add_argument('--dropout', type=float, default=0.6)
-parser.add_argument('--lambda1', type=float, default=0.5)
-parser.add_argument('--lambda2', type=float, default=1)
+parser.add_argument('--lr', type=float, default=0.00036)
+parser.add_argument('--dropout', type=float, default=0.2)
+parser.add_argument('--lambda1', type=float, default=0.1)
+parser.add_argument('--lambda2', type=float, default=0.9)
 
 parser.add_argument('--epoch', type=int, default=300)
 parser.add_argument('--accelerator', type=str, default="gpu")
@@ -70,13 +70,13 @@ model = LitModel(
     edge_input_size = args.rel_emb_nb * 4,
     # gat_input_size = 114,
     node_gat_input_size = 128,
-    edge_gat_input_size = 32,
+    edge_gat_input_size = 224,
     # gat_hidden_size = 512,
-    node_gat_hidden_size = [512, 256, 128, 256, 512],
+    node_gat_hidden_size = [512, 256, 160, 256, 512],
     edge_gat_hidden_size = [256, 128, 64, 128, 256],
     # gat_output_size = 128,
-    node_gat_output_size = 128,
-    edge_gat_output_size = 64,
+    node_gat_output_size = 224,
+    edge_gat_output_size = 160,
     gat_n_heads = 8,
     node_class_nb = 114,
     edge_class_nb = 14,

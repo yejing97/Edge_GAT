@@ -22,8 +22,8 @@ def objective(trial: optuna.trial.Trial):
     lambda1 = trial.suggest_float('lambda1', 0, 1, step=0.1)
     lambda2 = 1 - lambda1
     dropout = trial.suggest_float('dropout', 0.1, 0.6, step=0.1)
-    node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 257, step=32)
-    edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 257, step=32)
+    # node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 257, step=32)
+    # edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 257, step=32)
     # node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 257, step=32)
     # edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 257, step=32)
     node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 257, step=32)
@@ -60,8 +60,8 @@ def objective(trial: optuna.trial.Trial):
     model = LitModel(
         node_input_size = stroke_emb_nb,
         edge_input_size = rel_emb_nb * 4,
-        node_gat_input_size = node_gat_input_size,
-        edge_gat_input_size = edge_gat_input_size,
+        node_gat_input_size = 128,
+        edge_gat_input_size = 256,
         node_gat_hidden_size = [512, 256, 128, 256, 512],
         edge_gat_hidden_size = [256, 128, 64, 128, 256],
         node_gat_output_size = node_gat_output_size,
