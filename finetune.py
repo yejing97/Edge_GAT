@@ -15,8 +15,8 @@ import sys
 def objective(trial: optuna.trial.Trial):
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 200, step=50)
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
-    stroke_emb_nb = 100
-    rel_emb_nb = 5
+    stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 50, 201, step=50)
+    rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     batch_size = trial.suggest_int('batch_size', 64, 257, step=64)
     lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
     lambda1 = trial.suggest_float('lambda1', 0, 1, step=0.1)
