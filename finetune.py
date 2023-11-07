@@ -18,17 +18,17 @@ def objective(trial: optuna.trial.Trial):
     stroke_emb_nb = 100
     rel_emb_nb = 5
     batch_size = trial.suggest_int('batch_size', 64, 257, step=64)
-    lr = trial.suggest_float('lr', 0.00001, 0.01)
-    lambda1 = trial.suggest_float('lambda1', 0, 1)
+    lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
+    lambda1 = trial.suggest_float('lambda1', 0, 1, step=0.1)
     lambda2 = 1 - lambda1
-    dropout = trial.suggest_float('dropout', 0.1, 0.6)
+    dropout = trial.suggest_float('dropout', 0.1, 0.6, step=0.1)
     node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 257, step=32)
     edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 257, step=32)
     node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 257, step=32)
     edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 257, step=32)
     node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 257, step=32)
     edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 257, step=32)
-    gat_n_heads = trial.suggest_int('gat_n_heads', 4, 9, step=4)
+    gat_n_heads = trial.suggest_int('gat_n_heads', 8, 17, step=8)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
@@ -82,13 +82,13 @@ def objective(trial: optuna.trial.Trial):
         shuffle = True,
         batch_size = batch_size,
         num_workers = 8,
-        max_node = 16,
+        max_node = -1,
         reload_dataloaders_every_n_epochs = 1
     )
     early_stopping = pl.callbacks.EarlyStopping(
         monitor='val_acc_node',
-        min_delta=0.00001,
-        patience=20,
+        min_delta=0,
+        patience=50,
         verbose=False,
         mode='max'
     )
