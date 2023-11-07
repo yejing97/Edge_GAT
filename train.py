@@ -14,11 +14,12 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('--data_path', type=str, default='/home/xie-y/data/Edge_GAT/')
 # parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 # parser.add_argument('--results_path', type=str, default='/home/xie-y/Edge_GAT/val_results/')
-parser.add_argument('--stroke_emb_nb', type=int, default=100)
+parser.add_argument('--stroke_emb_nb', type=int, default=50)
 parser.add_argument('--rel_emb_nb', type=int, default=5)
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--max_node', type=int, default=-1)
 parser.add_argument('--speed', type=bool, default=False)
+parser.add_argument('--norm', type=str, default='equation')
 parser.add_argument('--shuffle', type=bool, default=True)
 parser.add_argument('--num_workers', type=int, default=8)
 parser.add_argument('--min_delta', type=float, default=0.00001)
@@ -26,8 +27,8 @@ parser.add_argument('--patience', type=int, default=30)
 
 parser.add_argument('--lr', type=float, default=0.00036)
 parser.add_argument('--dropout', type=float, default=0.2)
-parser.add_argument('--lambda1', type=float, default=0.1)
-parser.add_argument('--lambda2', type=float, default=0.9)
+parser.add_argument('--lambda1', type=float, default=0.8)
+parser.add_argument('--lambda2', type=float, default=0.2)
 
 parser.add_argument('--epoch', type=int, default=300)
 parser.add_argument('--accelerator', type=str, default="gpu")
@@ -38,7 +39,7 @@ if args.device == 'cpu':
     data_path = '/home/e19b516g/yejing/data/data_for_graph/'
 else:
     data_path = '/home/xie-y/data/Edge_GAT/'
-npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed)
+npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed) + '_' + str(args.norm)
 npz_path = os.path.join(data_path, npz_name)
 if not os.path.exists(npz_path):
     os.makedirs(npz_path)
