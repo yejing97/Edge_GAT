@@ -46,7 +46,7 @@ def objective(trial: optuna.trial.Trial):
     root_path = sys.path[0]
     results_path = os.path.join(root_path, 'val_results')
     exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
-    logger_path = os.path.join(root_path, 'finetunning' , npz_name)
+    logger_path = os.path.join(root_path, 'finetunning_deep' , npz_name)
     logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
     val_results_path = os.path.join(results_path, npz_name, exp_name)
     if not os.path.exists(val_results_path):
