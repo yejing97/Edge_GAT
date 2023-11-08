@@ -18,14 +18,14 @@ def objective(trial: optuna.trial.Trial):
     stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 50, 201, step=50)
     rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     batch_size = trial.suggest_int('batch_size', 64, 257, step=64)
-    lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
+    lr = trial.suggest_float('lr', 1e-6, 1e-1, log=True)
     lambda1 = trial.suggest_float('lambda1', 0, 1, step=0.1)
     lambda2 = 1 - lambda1
-    dropout = trial.suggest_float('dropout', 0.1, 0.6, step=0.1)
+    dropout = trial.suggest_float('dropout', 0.4, 1, step=0.1)
     node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 257, step=32)
     edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 257, step=32)
-    # node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 257, step=32)
-    # edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 257, step=32)
+    node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 513, step=64)
+    edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 513, step=64)
     node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 257, step=32)
     edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 257, step=32)
     gat_n_heads = trial.suggest_int('gat_n_heads', 4, 9, step=4)
@@ -46,7 +46,7 @@ def objective(trial: optuna.trial.Trial):
     root_path = sys.path[0]
     results_path = os.path.join(root_path, 'val_results')
     exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
-    logger_path = os.path.join(root_path, 'finetunning_deep' , npz_name)
+    logger_path = os.path.join(root_path, 'finetunning' , npz_name)
     logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
     val_results_path = os.path.join(results_path, npz_name, exp_name)
     if not os.path.exists(val_results_path):
@@ -62,8 +62,8 @@ def objective(trial: optuna.trial.Trial):
         edge_input_size = rel_emb_nb * 4,
         node_gat_input_size = 128,
         edge_gat_input_size = 256,
-        node_gat_hidden_size = [512, 256, 128, 256, 512],
-        edge_gat_hidden_size = [256, 128, 64, 128, 256],
+        node_gat_hidden_size = node_gat_hidden_size,
+        edge_gat_hidden_size = edge_gat_hidden_size,
         node_gat_output_size = node_gat_output_size,
         edge_gat_output_size = edge_gat_output_size,
         gat_n_heads = gat_n_heads,
@@ -100,7 +100,7 @@ def objective(trial: optuna.trial.Trial):
         logger=logger,
         callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
     )
-    hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=[512, 256, 128, 256, 512], edge_gat_hidden_size=[256, 128, 64, 128, 256], node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
+    hyperparameters = dict(stroke_emb_nb=stroke_emb_nb, rel_emb_nb=rel_emb_nb, batch_size=batch_size, lr=lr, lambda1=lambda1, lambda2=lambda2, dropout=dropout, node_gat_input_size=node_gat_input_size, edge_gat_input_size=edge_gat_input_size, node_gat_hidden_size=node_gat_hidden_size, edge_gat_hidden_size=edge_gat_hidden_size, node_gat_output_size=node_gat_output_size, edge_gat_output_size=edge_gat_output_size, gat_n_heads=gat_n_heads)
     trainer.logger.log_hyperparams(hyperparameters)
     try:
         trainer.fit(model.to(device), dm)
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     pruner = optuna.pruners.MedianPruner() 
 
     study = optuna.create_study(direction="maximize", pruner=pruner)
-    study.optimize(objective, n_trials=None, timeout=None, show_progress_bar=True)
+    study.optimize(objective, n_trials=100, timeout=None, show_progress_bar=True)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
