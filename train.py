@@ -15,20 +15,20 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 # parser.add_argument('--results_path', type=str, default='/home/xie-y/Edge_GAT/val_results/')
 parser.add_argument('--stroke_emb_nb', type=int, default=150)
-parser.add_argument('--rel_emb_nb', type=int, default=5)
+parser.add_argument('--rel_emb_nb', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--max_node', type=int, default=-1)
 parser.add_argument('--speed', type=bool, default=False)
 parser.add_argument('--norm', type=str, default='equation')
 parser.add_argument('--shuffle', type=bool, default=True)
-parser.add_argument('--num_workers', type=int, default=8)
+parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--min_delta', type=float, default=1e-6)
 parser.add_argument('--patience', type=int, default=30)
 
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--dropout', type=float, default=0.2)
-parser.add_argument('--lambda1', type=float, default=0.8)
-parser.add_argument('--lambda2', type=float, default=0.2)
+parser.add_argument('--lambda1', type=float, default=0.1)
+parser.add_argument('--lambda2', type=float, default=0.9)
 
 parser.add_argument('--epoch', type=int, default=300)
 parser.add_argument('--accelerator', type=str, default="gpu")
@@ -72,17 +72,17 @@ model = LitModel(
     node_input_size = args.stroke_emb_nb,
     edge_input_size = args.rel_emb_nb * 4,
     # gat_input_size = 114,
-    node_gat_input_size = 128,
-    edge_gat_input_size = 224,
+    node_gat_input_size = 96,
+    edge_gat_input_size = 64,
     # gat_hidden_size = 512,
     node_gat_hidden_size = 512,
-    edge_gat_hidden_size = 256,
+    edge_gat_hidden_size = 384,
     # gat_output_size = 128,
     node_gat_output_size = 224,
-    edge_gat_output_size = 160,
-    gat_n_heads = 8,
+    edge_gat_output_size = 192,
+    gat_n_heads = 4,
     node_class_nb = 114,
-    edge_class_nb = 14,
+    edge_class_nb = 2,
     # ckpt_path = args.ckpt_path,
     results_path = val_results_path,
     dropout = args.dropout,
@@ -97,12 +97,12 @@ model = LitModel(
 hyperparameters = dict(
     node_input_size = args.stroke_emb_nb,
     edge_input_size = args.rel_emb_nb * 4,
-    node_gat_input_size = 128,
-    edge_gat_input_size = 32,
-    node_gat_hidden_size = [512, 256, 128, 256, 512],
-    edge_gat_hidden_size = [256, 128, 64, 128, 256],
-    node_gat_output_size = 128,
-    edge_gat_output_size = 64,
+    node_gat_input_size = 96,
+    edge_gat_input_size = 64,
+    node_gat_hidden_size = 512,
+    edge_gat_hidden_size = 384,
+    node_gat_output_size = 224,
+    edge_gat_output_size = 192,
     gat_n_heads = 8,
     node_class_nb = 114,
     edge_class_nb = 14,
