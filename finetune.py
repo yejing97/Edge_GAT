@@ -13,22 +13,30 @@ import sys
 
 
 def objective(trial: optuna.trial.Trial):
-    # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 200, step=50)
-    # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
+    stroke_emb_nb = 150
+    rel_emb_nb = 10
     stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 50, 201, step=50)
     rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
-    batch_size = trial.suggest_int('batch_size', 96, 257, step=32)
+    # batch_size = trial.suggest_int('batch_size', 96, 257, step=32)
+    batch_size = 256
     lr = trial.suggest_float('lr', 1e-6, 1e-1, log=True)
     lambda1 = trial.suggest_float('lambda1', 0, 1, step=0.1)
     lambda2 = 1 - lambda1
     dropout = trial.suggest_float('dropout', 0.4, 1, step=0.1)
-    node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 257, step=32)
-    edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 257, step=32)
-    node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 513, step=64)
-    edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 513, step=64)
-    node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 257, step=32)
-    edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 257, step=32)
-    gat_n_heads = trial.suggest_int('gat_n_heads', 4, 9, step=4)
+    node_gat_input_size = 96
+    edge_gat_input_size = 64
+    node_gat_hidden_size = 512
+    edge_gat_hidden_size = 384
+    node_gat_output_size = 224
+    edge_gat_output_size = 192
+    gat_n_heads = 4
+    # node_gat_input_size = trial.suggest_int('node_gat_input_size', 32, 257, step=32)
+    # edge_gat_input_size = trial.suggest_int('edge_gat_input_size', 32, 257, step=32)
+    # node_gat_hidden_size = trial.suggest_int('node_gat_hidden_size', 64, 513, step=64)
+    # edge_gat_hidden_size = trial.suggest_int('edge_gat_hidden_size', 64, 513, step=64)
+    # node_gat_output_size = trial.suggest_int('node_gat_output_size', 32, 257, step=32)
+    # edge_gat_output_size = trial.suggest_int('edge_gat_output_size', 32, 257, step=32)
+    # gat_n_heads = trial.suggest_int('gat_n_heads', 4, 9, step=4)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
@@ -88,7 +96,7 @@ def objective(trial: optuna.trial.Trial):
     early_stopping = pl.callbacks.EarlyStopping(
         monitor='val_acc_node',
         min_delta=0,
-        patience=20,
+        patience=40,
         verbose=False,
         mode='max'
     )

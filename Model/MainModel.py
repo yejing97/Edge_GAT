@@ -56,7 +56,7 @@ class MainModel(pl.LightningModule):
         self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
         self.activation = torch.nn.LeakyReLU()
 
-        self.node_emb = XceptionTime(node_input_size, node_gat_input_size)
+        self.node_emb = InceptionTime(node_input_size, node_gat_input_size)
         self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_input_size)
 
 
