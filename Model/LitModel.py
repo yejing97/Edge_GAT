@@ -8,7 +8,7 @@ from collections import OrderedDict
 # import sys
 from Model.EdgeGat import Readout
 from Model.MainModel import MainModel
-
+from Model.focalloss import FocalLoss
 
 
 
@@ -39,7 +39,8 @@ class LitModel(pl.LightningModule):
         # self.ckpt_path = args['ckpt_path']
         self.results_path = args['results_path']
 
-        self.loss = torch.nn.CrossEntropyLoss()
+        # self.loss = torch.nn.CrossEntropyLoss()
+        self.loss = FocalLoss(gamma=2)
 
         self.validation_step_outputs = []
         # self.node_emb_model = XceptionTime(self.node_input_size, self.gat_input_size)
@@ -107,6 +108,7 @@ class LitModel(pl.LightningModule):
         strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
 
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+        self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
 
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
 
@@ -121,7 +123,6 @@ class LitModel(pl.LightningModule):
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=False, logger=True)
         self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=False, logger=True)
-        self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
         return acc_node
     
     def on_validation_epoch_end(self) -> None:
