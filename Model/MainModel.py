@@ -28,7 +28,7 @@ class MainModel(pl.LightningModule):
             gat_n_heads: int,
             node_class_nb: int,
             edge_class_nb: int,
-            dropout: float = 0.6,
+            dropout: float,
             ) -> None:
         super().__init__()
         self.node_input_size = node_input_size
@@ -62,10 +62,9 @@ class MainModel(pl.LightningModule):
 
 
         # self.edge_gat1 = EdgeGraphAttention(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout = self.dropout)
-        print('node_gat_hidden_size', node_gat_hidden_size)
         # self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size, edge_gat_hidden_size, gat_n_heads, dropout = dropout)
         # self.edge_gat6 = EdgeGraphAttention(node_gat_hidden_size, edge_gat_hidden_size, node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
-        self.edge_gat = GraphAttentionLayer(node_gat_input_size, edge_gat_input_size, node_gat_output_size, edge_gat_output_size, gat_n_heads, dropout = dropout)
+        self.edge_gat = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_output_size, edge_gat_output_size, gat_n_heads, dropout)
 
         self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
         self.readout_node = Readout(node_gat_output_size, node_class_nb)
