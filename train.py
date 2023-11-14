@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('--data_path', type=str, default='/home/xie-y/data/Edge_GAT/')
 # parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 # parser.add_argument('--results_path', type=str, default='/home/xie-y/Edge_GAT/val_results/')
-parser.add_argument('--stroke_emb_nb', type=int, default=100)
+parser.add_argument('--stroke_emb_nb', type=int, default=50)
 parser.add_argument('--rel_emb_nb', type=int, default=5)
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--max_node', type=int, default=-1)
@@ -40,15 +40,15 @@ if args.device == 'cpu':
 else:
     data_path = '/home/xie-y/data/Edge_GAT/'
 # npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed) + '_' + str(args.norm)
-npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed)
+npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb)
 
 npz_path = os.path.join(data_path, npz_name)
 if not os.path.exists(npz_path):
     os.makedirs(npz_path)
-    make_data(os.path.join(data_path, 'INKML'), npz_path, args.stroke_emb_nb, args.rel_emb_nb, args.speed)
+    make_data(os.path.join(data_path, 'INKML'), npz_path, args.stroke_emb_nb, args.rel_emb_nb, args.speed, 'stroke')
 
 exp_name = 'lr_' + str(args.lr) + '_bs_' + str(args.batch_size) + '_epoch_' + str(args.epoch) + '_dropout_' + str(args.dropout) + '_l1_' + str(args.lambda1) + '_l2_' + str(args.lambda2) + '_max_' +str(args.max_node)
-logger_path = os.path.join(root_path, 'logs' , npz_name)
+logger_path = os.path.join(root_path, 'new_labels' , npz_name)
 logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
 val_results_path = os.path.join(results_path, npz_name, exp_name)
 if not os.path.exists(val_results_path):
@@ -82,7 +82,7 @@ model = LitModel(
     edge_gat_output_size = 192,
     gat_n_heads = 4,
     node_class_nb = 114,
-    edge_class_nb = 2,
+    edge_class_nb = 26,
     # ckpt_path = args.ckpt_path,
     results_path = val_results_path,
     dropout = args.dropout,
@@ -105,7 +105,7 @@ hyperparameters = dict(
     edge_gat_output_size = 192,
     gat_n_heads = 4,
     node_class_nb = 114,
-    edge_class_nb = 14,
+    edge_class_nb = 26,
     dropout = args.dropout,
     lr = args.lr,
     lambda1 = args.lambda1,

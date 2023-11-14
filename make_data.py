@@ -24,7 +24,7 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, rel_emb_nb, speed, norm):
     file_id = inkml.split('/')[-1].split('.')[0]
     # inkml = os.path.join(inkml_path, file_id + '.inkml')
     # lg = os.path.join(lg_path, file_id + '.lg')
-    strokes, stroke_labels, edge_labels = load_gt(inkml, lg)
+    strokes, stroke_labels, edge_labels, los_graph = load_gt(inkml, lg)
     # print(edge_labels)
     max_len = max(normalization.stroke_length(stroke)[-1] for stroke in strokes)
     alpha1 = max_len/stroke_emb_nb
@@ -33,7 +33,7 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, rel_emb_nb, speed, norm):
     # nospeed = np.zeros((len(strokes), stroke_emb_nb, 2), dtype=np.float32)
     strokes_no_speed_edge = []
     strokes_no_speed_node = []
-    los_graph = los.LOS(strokes)
+    # los_graph = los.LOS(strokes)
     edge_nb = np.sum(los_graph == 1)
     node_nb = len(strokes)
     for i in range(len(strokes)):
@@ -56,7 +56,6 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, rel_emb_nb, speed, norm):
         for i in range(len(new_strokes_keep_shape)):
             strokes_emb[i, :len(new_strokes_keep_shape[i]), :] = new_strokes_keep_shape[i]
         strokes_emb = np.array(strokes_emb)
-        print(strokes_emb.shape)
     edges_emb = fuzzy_relation.fuzzy_relations(strokes_no_speed_edge, los_graph, rel_emb_nb)
     # outfile = TemporaryFile()
     if not os.path.exists(tgt_path):
@@ -94,7 +93,7 @@ if __name__ == '__main__':
     R = [5, 10]
     for s in S:
         for r in R:
-            npz_name = 'S'+ str(s) + '_R' + str(r) + '_equation'
+            npz_name = 'S'+ str(s) + '_R' + str(r) + '_stroke'
             npz_path = os.path.join(args.root_path, npz_name)
             if not os.path.exists(npz_path):
-                make_data(inkml_path, npz_path, s, r, False, 'equation')
+                make_data(inkml_path, npz_path, s, r, False, 'stroke')

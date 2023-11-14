@@ -8,10 +8,37 @@ import sys
 
 from Preprocessing.LG.lg import Lg
 from Preprocessing.vocab.vocab import vocab
+from Preprocessing.los import LOS
 
 doc_namespace = "{http://www.w3.org/2003/InkML}"
 
-def load_lg(lg_path, dic):
+def find_path(adj_matrix, start, end, visited=None, path=None):
+    if visited is None:
+        visited = set()
+    if path is None:
+        path = []
+
+    # Mark the current node as visited and add it to the path
+    visited.add(start)
+    path.append(start)
+
+    # If the current node is the destination, return the path
+    if start == end:
+        return path
+
+    # Check neighbors of the current node
+    for node, connected in enumerate(adj_matrix[start]):
+        if connected and node not in visited:
+            # Recursively call find_path for unvisited neighbors
+            new_path = find_path(adj_matrix, node, end, visited, path)
+            if new_path:
+                return new_path
+
+    # If no path is found, backtrack
+    path.pop()
+    return None
+
+def load_lg(lg_path, dic, los):
     lg = Lg(lg_path).segmentGraph()
     edge = lg[3]
     node = lg[0]
@@ -35,6 +62,17 @@ def load_lg(lg_path, dic):
             for j in index1:
                 new_matrix[dic_index.index(int(i)), dic_index.index(int(j))] = vocab.rel2indices([relation])[0]
                 new_matrix[dic_index.index(int(j)), dic_index.index(int(i))] = vocab.rel2indices([relation])[0] + 6
+        # make value below the diagonal equal to 0
+    new_matrix = torch.triu(new_matrix)
+    m = new_matrix
+
+    for i in range(los.shape[0]):
+        for j in range(i+1, los.shape[0]):
+            if los[i, j] == 1 and m[i, j] == 0:
+                path = find_path(m, i, j)
+                if path != None:
+                    new_matrix[i, j] = m[path[0], path[1]] + 12
+    
     for key in node:
         for i in node[key][0]:
             # print(i)
@@ -83,6 +121,7 @@ def load_inkml(file_path):
 
 def load_gt(inkml_path, lg_path):
     strokes, s_labels, dic = load_inkml(inkml_path)
-    e_labels = load_lg(lg_path, dic)
-    return strokes, s_labels, e_labels
+    los = LOS(strokes)
+    e_labels = load_lg(lg_path, dic, los)
+    return strokes, s_labels, e_labels, los
 
