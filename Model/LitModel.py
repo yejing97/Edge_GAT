@@ -39,8 +39,8 @@ class LitModel(pl.LightningModule):
         # self.ckpt_path = args['ckpt_path']
         self.results_path = args['results_path']
 
-        # self.loss = torch.nn.CrossEntropyLoss()
-        self.loss = FocalLoss(gamma=2)
+        self.loss_node = torch.nn.CrossEntropyLoss()
+        self.loss_edge = FocalLoss(gamma=2)
 
         self.validation_step_outputs = []
         # self.node_emb_model = XceptionTime(self.node_input_size, self.gat_input_size)
@@ -94,8 +94,8 @@ class LitModel(pl.LightningModule):
         # print(edge_hat)
         # print(edges_label)
         # loss = self.loss(node_gat_feat, strokes_label)
-        loss_node = self.loss(node_hat, strokes_label)
-        loss_edge = self.loss(edge_hat, edges_label)
+        loss_node = self.loss_node(node_hat, strokes_label)
+        loss_edge = self.loss_edge(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
 
         self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
