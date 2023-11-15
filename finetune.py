@@ -13,8 +13,8 @@ import sys
 
 
 def objective(trial: optuna.trial.Trial):
-    stroke_emb_nb = 150
-    rel_emb_nb = 10
+    stroke_emb_nb = 50
+    rel_emb_nb = 5
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 50, 201, step=50)
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     # batch_size = trial.suggest_int('batch_size', 96, 257, step=32)
@@ -47,11 +47,11 @@ def objective(trial: optuna.trial.Trial):
         data_path = '/home/e19b516g/yejing/data/data_for_graph/'
     else:
         data_path = '/home/xie-y/data/Edge_GAT/'
-    npz_name = 'S'+ str(stroke_emb_nb) + '_R' + str(rel_emb_nb) + '_Speed_' + str(speed)
+    npz_name = 'S'+ str(stroke_emb_nb) + '_R' + str(rel_emb_nb)
     npz_path = os.path.join(data_path, npz_name)
     if not os.path.exists(npz_path):
         os.makedirs(npz_path)
-        make_data(os.path.join(data_path, 'INKML'), npz_path, stroke_emb_nb, rel_emb_nb, speed)
+        make_data(os.path.join(data_path, 'INKML'), npz_path, stroke_emb_nb, rel_emb_nb, speed, 'stroke')
     root_path = sys.path[0]
     results_path = os.path.join(root_path, 'val_results')
     exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
