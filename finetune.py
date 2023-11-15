@@ -77,7 +77,7 @@ def objective(trial: optuna.trial.Trial):
         edge_gat_output_size = edge_gat_output_size,
         gat_n_heads = gat_n_heads,
         node_class_nb = 114,
-        edge_class_nb = 14,
+        edge_class_nb = 26,
         dropout = dropout,
         lr = lr,
         lambda1 = lambda1,
