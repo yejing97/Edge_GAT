@@ -87,6 +87,10 @@ class LitModel(pl.LightningModule):
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
 
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+        if len(edges_label.shape) == 0:
+            loss_edge = torch.tensor(0).to(self.d)
+        else:
+            loss_edge = self.loss_edge(edge_hat, edges_label)
         # node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
         # node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
         # node_hat = self.readout_node(node_gat_feat)
@@ -96,7 +100,7 @@ class LitModel(pl.LightningModule):
         # print(edges_label)
         # loss = self.loss(node_gat_feat, strokes_label)
         loss_node = self.loss_node(node_hat, strokes_label)
-        loss_edge = self.loss_edge(edge_hat, edges_label)
+        # loss_edge = self.loss_edge(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
 
         self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
