@@ -7,3 +7,4 @@ finetunning/
 **/__pycache__
 nohup.out
 finetune.log
+new_labels/

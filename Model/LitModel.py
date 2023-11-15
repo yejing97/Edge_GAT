@@ -72,6 +72,7 @@ class LitModel(pl.LightningModule):
         return strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d), strokes_label.to(self.d), edges_label.to(self.d)
     
     def edge_filter(self, edges_emb, edges_label, los):
+        los = torch.triu(los)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
         edges_label = edges_label[indices]
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
