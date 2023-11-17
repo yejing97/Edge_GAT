@@ -4,7 +4,6 @@ from tsai.all import *
 # from labml_helpers.module import Module
 import pytorch_lightning as pl
 from Model.EdgeGat import EdgeGraphAttention, Readout
-from labml_nn.graphs.gat import GraphAttentionLayer
 
 def get_parameter_number(model):
     total_num = sum(p.numel() for p in model.parameters())
