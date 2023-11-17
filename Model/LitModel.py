@@ -69,7 +69,6 @@ class LitModel(pl.LightningModule):
         strokes_label = strokes_label.squeeze(0).long()
         edges_label = edges_label.squeeze(0).reshape(-1).long()
         los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
-        # got the nb of 1 in los
         return strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d), strokes_label.to(self.d), edges_label.to(self.d)
     
     def edge_filter(self, edges_emb, edges_label, los):
@@ -87,10 +86,8 @@ class LitModel(pl.LightningModule):
         # edges_label = edges_label.squeeze(0).reshape(-1)[indices]
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-        if len(edges_label.shape) == 0:
-            loss_edge = torch.tensor(0).to(self.d)
-        else:
-            loss_edge = self.loss_edge(edge_hat, edges_label)
+
+        loss_edge = self.loss_edge(edge_hat, edges_label)
         # node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
         # node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
         # node_hat = self.readout_node(node_gat_feat)
@@ -114,10 +111,8 @@ class LitModel(pl.LightningModule):
 
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-        if len(edges_label.shape) == 0:
-            loss_edge = torch.tensor(0).to(self.d)
-        else:
-            loss_edge = self.loss_edge(edge_hat, edges_label)
+
+        loss_edge = self.loss_edge(edge_hat, edges_label)
 
         loss_node = self.loss_node(node_hat, strokes_label)
         # loss_edge = self.loss_edge(edge_hat, edges_label)
