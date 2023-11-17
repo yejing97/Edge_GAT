@@ -59,10 +59,9 @@ class CROHMEDataset(torch.utils.data.Dataset):
             edge_labels = torch.from_numpy(data['edge_labels']).long()
             # edge_labels = torch.where(edge_labels > 1, torch.zeros_like(edge_labels), edge_labels)
             batch_edge_labels[start:start+edge_labels.shape[0], start:start+edge_labels.shape[1]] = edge_labels
-
             los = torch.from_numpy(data['los']).long()
             batch_los[start:start+los.shape[0], start:start+los.shape[1]] = los
-            start += strokes_emb.shape[0]
+            start = start + strokes_emb.shape[0]
         return batch_strokes_emb, batch_edges_emb.reshape(self.batch_node_nb[index], self.batch_node_nb[index], edges_emb.shape[2]*edges_emb.shape[3]), batch_los, batch_stroke_labels.long(), batch_edge_labels
     
     def __len__(self):

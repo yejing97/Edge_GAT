@@ -1,7 +1,7 @@
 import torch
 import pytorch_lightning as pl
 from tsai.all import *
-from labml_nn.graphs.gat import GraphAttentionLayer
+# from labml_nn.graphs.gat import GraphAttentionLayer
 from sklearn.metrics import accuracy_score
 from collections import OrderedDict
 
@@ -10,7 +10,7 @@ from Model.EdgeGat import Readout
 from Model.MainModel import MainModel
 from Model.focalloss import FocalLoss
 
-
+torch.set_printoptions(threshold=np.inf)
 
 class LitModel(pl.LightningModule):
     def __init__(self, **args):
@@ -69,10 +69,12 @@ class LitModel(pl.LightningModule):
         strokes_label = strokes_label.squeeze(0).long()
         edges_label = edges_label.squeeze(0).reshape(-1).long()
         los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
+        # got the nb of 1 in los
         return strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d), strokes_label.to(self.d), edges_label.to(self.d)
     
     def edge_filter(self, edges_emb, edges_label, los):
-        los = torch.triu(los)
+
+        # los = torch.triu(los)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
         edges_label = edges_label[indices]
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
@@ -83,9 +85,7 @@ class LitModel(pl.LightningModule):
         strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
         # indices = torch.nonzero(los.reshape(-1)).squeeze()
         # edges_label = edges_label.squeeze(0).reshape(-1)[indices]
-
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
-
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
         if len(edges_label.shape) == 0:
             loss_edge = torch.tensor(0).to(self.d)
@@ -111,6 +111,7 @@ class LitModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
+        print('llll' + str(torch.sum(los)))
 
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
