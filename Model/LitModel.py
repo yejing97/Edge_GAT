@@ -111,7 +111,6 @@ class LitModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
-        print('llll' + str(torch.sum(los)))
 
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)

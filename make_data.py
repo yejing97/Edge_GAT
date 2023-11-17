@@ -93,7 +93,7 @@ if __name__ == '__main__':
     R = [5, 10]
     for s in S:
         for r in R:
-            npz_name = 'S'+ str(s) + '_R' + str(r) + '_stroke'
+            npz_name = 'S'+ str(s) + '_R' + str(r)
             npz_path = os.path.join(args.root_path, npz_name)
             if not os.path.exists(npz_path):
                 make_data(inkml_path, npz_path, s, r, False, 'stroke')
