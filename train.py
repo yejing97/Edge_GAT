@@ -14,8 +14,8 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('--data_path', type=str, default='/home/xie-y/data/Edge_GAT/')
 # parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 # parser.add_argument('--results_path', type=str, default='/home/xie-y/Edge_GAT/val_results/')
-parser.add_argument('--stroke_emb_nb', type=int, default=100)
-parser.add_argument('--rel_emb_nb', type=int, default=5)
+parser.add_argument('--stroke_emb_nb', type=int, default=150)
+parser.add_argument('--rel_emb_nb', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--max_node', type=int, default=-1)
 parser.add_argument('--speed', type=bool, default=False)
@@ -93,15 +93,7 @@ model = LitModel(
     min_delta = args.min_delta,
     patience = args.patience
 )
-dm.setup('fit')
-print(npz_path)
-for i, batch in enumerate(dm.train_dataloader()):
-    strokes, relations, los, s_label, r_label= batch
-    _, new_edge_l = model.edge_filter(relations, r_label.reshape(-1), los)
-    zero = torch.zeros_like(new_edge_l)
-    one = torch.ones_like(new_edge_l)
-    print(new_edge_l.shape)
-    print(torch.where(new_edge_l == 0, 1, 0).sum())
+
 
 hyperparameters = dict(
     node_input_size = args.stroke_emb_nb,
@@ -123,6 +115,6 @@ hyperparameters = dict(
     min_delta = args.min_delta
 )
 
-# trainer = pl.Trainer(max_epochs=args.epoch, accelerator="auto", devices=1, logger=logger)
-# trainer.logger.log_hyperparams(hyperparameters)
-# trainer.fit(model.to(args.device), dm)
+trainer = pl.Trainer(max_epochs=args.epoch, accelerator="auto", devices=1, logger=logger)
+trainer.logger.log_hyperparams(hyperparameters)
+trainer.fit(model.to(args.device), dm)
