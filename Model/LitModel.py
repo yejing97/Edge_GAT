@@ -73,7 +73,7 @@ class LitModel(pl.LightningModule):
     
     def edge_filter(self, edges_emb, edges_label, los):
         los = los.squeeze().fill_diagonal_(0)
-        # los = torch.triu(los)
+        los = torch.triu(los)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
         edges_label = edges_label[indices]
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
@@ -85,8 +85,9 @@ class LitModel(pl.LightningModule):
         # indices = torch.nonzero(los.reshape(-1)).squeeze()
         # edges_label = edges_label.squeeze(0).reshape(-1)[indices]
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+        # print(torch.where(edges_label == 0, 1, 0).sum())
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-
+        # print(torch.where(edges_label == 0, 1, 0).sum())
         loss_edge = self.loss_edge(edge_hat, edges_label)
         # node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
         # node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
