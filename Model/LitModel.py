@@ -87,16 +87,10 @@ class LitModel(pl.LightningModule):
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         # print(torch.where(edges_label == 0, 1, 0).sum())
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+        # print(edge_hat.shape, edges_label.shape)
         # print(torch.where(edges_label == 0, 1, 0).sum())
         loss_edge = self.loss_edge(edge_hat, edges_label)
-        # node_gat_feat = self.gat1(node_gat_feat, los.to(self.d))
-        # node_gat_feat = self.gat2(node_gat_feat, los.to(self.d))
-        # node_hat = self.readout_node(node_gat_feat)
-                
-        # edge_hat = edge_hat.reshape(-1, self.edge_class_nb)[indices]
-        # print(edge_hat)
-        # print(edges_label)
-        # loss = self.loss(node_gat_feat, strokes_label)
+
         loss_node = self.loss_node(node_hat, strokes_label)
         # loss_edge = self.loss_edge(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
@@ -112,11 +106,10 @@ class LitModel(pl.LightningModule):
 
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-
+        # print(torch.where(edges_label == 0, 1, 0).sum())
         loss_edge = self.loss_edge(edge_hat, edges_label)
 
         loss_node = self.loss_node(node_hat, strokes_label)
-        # loss_edge = self.loss_edge(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
         self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
 
