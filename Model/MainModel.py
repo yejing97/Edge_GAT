@@ -68,12 +68,20 @@ class MainModel(pl.LightningModule):
         self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
         self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
+        self.initialize_weights()
+
         # print('node_emb', get_parameter_number(self.node_emb))
         # print('edge_emb', get_parameter_number(self.edge_emb))
         # print('edge_gat1', get_parameter_number(self.edge_gat1))
         # print('edge_gat2', get_parameter_number(self.edge_gat2))
         # print('readout_node', get_parameter_number(self.readout_node))
         # print('readout_edge', get_parameter_number(self.readout_edge))
+
+    def initialize_weights(self):
+        for m in [self.edge_gat1, self.edge_gat2, self.readout_node, self.readout_edge]:
+            for name, param in m.named_parameters():
+                if 'weight' in name:
+                    torch.nn.init.kaiming_uniform_(param)
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
         # print('node_in_features', node_in_features.shape)
