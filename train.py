@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('--results_path', type=str, default='/home/xie-y/Edge_GAT/val_results/')
 parser.add_argument('--stroke_emb_nb', type=int, default=100)
 parser.add_argument('--rel_emb_nb', type=int, default=10)
-parser.add_argument('--batch_size', type=int, default=64)
+parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--max_node', type=int, default=-1)
 parser.add_argument('--speed', type=bool, default=False)
 parser.add_argument('--norm', type=str, default='equation')
@@ -26,9 +26,9 @@ parser.add_argument('--min_delta', type=float, default=1e-6)
 parser.add_argument('--patience', type=int, default=30)
 
 parser.add_argument('--lr', type=float, default=1e-4)
-parser.add_argument('--dropout', type=float, default=0.5)
-parser.add_argument('--lambda1', type=float, default=0.4)
-parser.add_argument('--lambda2', type=float, default=0.6)
+parser.add_argument('--dropout', type=float, default=0.6)
+parser.add_argument('--lambda1', type=float, default=0.6)
+parser.add_argument('--lambda2', type=float, default=0.4)
 
 parser.add_argument('--epoch', type=int, default=300)
 parser.add_argument('--accelerator', type=str, default="gpu")
@@ -73,13 +73,13 @@ model = LitModel(
     edge_input_size = args.rel_emb_nb * 4,
     # gat_input_size = 114,
     node_gat_input_size = 96,
-    edge_gat_input_size = 64,
+    edge_gat_input_size = 256,
     # gat_hidden_size = 512,
-    node_gat_hidden_size = 512,
+    node_gat_hidden_size = 256,
     edge_gat_hidden_size = 384,
     # gat_output_size = 128,
-    node_gat_output_size = 224,
-    edge_gat_output_size = 192,
+    node_gat_output_size = 32,
+    edge_gat_output_size = 32,
     gat_n_heads = 8,
     node_class_nb = 114,
     edge_class_nb = 26,
@@ -95,26 +95,26 @@ model = LitModel(
 )
 
 
-hyperparameters = dict(
-    node_input_size = args.stroke_emb_nb,
-    edge_input_size = args.rel_emb_nb * 4,
-    node_gat_input_size = 96,
-    edge_gat_input_size = 64,
-    node_gat_hidden_size = 512,
-    edge_gat_hidden_size = 384,
-    node_gat_output_size = 224,
-    edge_gat_output_size = 192,
-    gat_n_heads = 4,
-    node_class_nb = 114,
-    edge_class_nb = 26,
-    dropout = args.dropout,
-    lr = args.lr,
-    lambda1 = args.lambda1,
-    lambda2 = args.lambda2,
-    patience = args.patience,
-    min_delta = args.min_delta
-)
+# hyperparameters = dict(
+#     node_input_size = args.stroke_emb_nb,
+#     edge_input_size = args.rel_emb_nb * 4,
+#     node_gat_input_size = 96,
+#     edge_gat_input_size = 64,
+#     node_gat_hidden_size = 512,
+#     edge_gat_hidden_size = 384,
+#     node_gat_output_size = 224,
+#     edge_gat_output_size = 192,
+#     gat_n_heads = 4,
+#     node_class_nb = 114,
+#     edge_class_nb = 26,
+#     dropout = args.dropout,
+#     lr = args.lr,
+#     lambda1 = args.lambda1,
+#     lambda2 = args.lambda2,
+#     patience = args.patience,
+#     min_delta = args.min_delta
+# )
 
 trainer = pl.Trainer(max_epochs=args.epoch, accelerator="auto", devices=1, logger=logger)
-trainer.logger.log_hyperparams(hyperparameters)
+# trainer.logger.log_hyperparams(hyperparameters)
 trainer.fit(model.to(args.device), dm)
