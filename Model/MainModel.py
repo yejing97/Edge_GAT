@@ -25,8 +25,8 @@ class MainModel(pl.LightningModule):
             node_gat_output_size: int,
             edge_gat_output_size: int,
             gat_n_heads: int,
-            node_class_nb: int,
-            edge_class_nb: int,
+            # node_class_nb: int,
+            # edge_class_nb: int,
             dropout: float,
             ) -> None:
         super().__init__()
@@ -65,8 +65,8 @@ class MainModel(pl.LightningModule):
         self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size, edge_gat_hidden_size, node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
         # self.edge_gat = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_output_size, edge_gat_output_size, gat_n_heads, dropout)
 
-        self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
-        self.readout_node = Readout(node_gat_output_size, node_class_nb)
+        # self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
+        # self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
         self.initialize_weights()
 
@@ -78,7 +78,7 @@ class MainModel(pl.LightningModule):
         # print('readout_edge', get_parameter_number(self.readout_edge))
 
     def initialize_weights(self):
-        for m in [self.edge_gat1, self.edge_gat2, self.readout_node, self.readout_edge]:
+        for m in [self.edge_gat1, self.edge_gat2]:
             for name, param in m.named_parameters():
                 if 'weight' in name:
                     torch.nn.init.kaiming_uniform_(param)
@@ -104,6 +104,6 @@ class MainModel(pl.LightningModule):
         node_gat_feat = self.activation(node_gat_feat)
         edge_gat_feat = self.activation(edge_gat_feat)
 
-        node_readout = self.readout_node(node_gat_feat)
-        edge_readout = self.readout_edge(edge_gat_feat)
-        return node_readout, edge_readout
+        # node_readout = self.readout_node(node_gat_feat)
+        # edge_readout = self.readout_edge(edge_gat_feat)
+        return node_gat_feat, edge_gat_feat

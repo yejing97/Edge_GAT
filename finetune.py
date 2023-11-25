@@ -1,4 +1,5 @@
 from Model.LitModel import LitModel
+from Model.MOModel import MOModel
 from Dataset.Datamodule import CROHMEDatamodule
 from make_data import make_data
 import torch
@@ -66,7 +67,7 @@ def objective(trial: optuna.trial.Trial):
     val_results_version = os.path.join(val_results_path, 'version_' + str(version))
     os.makedirs(val_results_version)
 
-    model = LitModel(
+    model = MOModel(
         node_input_size = stroke_emb_nb,
         edge_input_size = rel_emb_nb * 4,
         node_gat_input_size = node_gat_input_size,

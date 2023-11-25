@@ -1,4 +1,5 @@
 from Model.LitModel import LitModel
+from Model.MOModel import MOModel
 from Dataset.Datamodule import CROHMEDatamodule
 from make_data import make_data
 import torch
@@ -68,7 +69,7 @@ dm = CROHMEDatamodule(
     reload_dataloaders_every_n_epochs = 1
 )
 
-model = LitModel(
+model = MOModel(
     node_input_size = args.stroke_emb_nb,
     edge_input_size = args.rel_emb_nb * 4,
     # gat_input_size = 114,
