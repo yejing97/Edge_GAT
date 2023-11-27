@@ -101,7 +101,7 @@ class MOModel(pl.LightningModule):
         for gr_i in range(len(grads['node'])):
             grads['node'][gr_i] = grads['node'][gr_i] / gn['node']
         
-        grads['node'] = grads['node'].repeat(1, grads['node'].shape[0]).reshape(grads['edge'].shape[0], grads['edge'].shape[1])
+        # grads['node'] = grads['node'].repeat(1, grads['node'].shape[0]).reshape(grads['edge'].shape[0], grads['edge'].shape[1])
         # print(grads['edge'].shape, grads['node'].shape)
 
         
