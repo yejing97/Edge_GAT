@@ -103,7 +103,10 @@ class MainModel(pl.LightningModule):
         edge_gat_feat = self.bn_edge_2(edge_gat_feat)
         node_gat_feat = self.activation(node_gat_feat)
         edge_gat_feat = self.activation(edge_gat_feat)
-
+        
+        node_repeat = node_gat_feat.repeat(1, node_gat_feat.shape[0]).reshape(node_gat_feat.shape[1], node_gat_feat.shape[0], node_gat_feat.shape[0])
+        eye = torch.eye(node_gat_feat.shape[0], node_gat_feat.shape[0]).to(node_gat_feat.device).repeat(node_gat_feat.shape[1], 1, 1)
+        node_out = (node_repeat * eye).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], node_gat_feat.shape[1])
         # node_readout = self.readout_node(node_gat_feat)
         # edge_readout = self.readout_edge(edge_gat_feat)
-        return node_gat_feat, edge_gat_feat
+        return node_out, edge_gat_feat

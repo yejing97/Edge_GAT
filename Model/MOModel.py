@@ -48,6 +48,10 @@ class MOModel(pl.LightningModule):
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
         return edges_emb, edges_label
     
+    def node_filter(self, nodes_emb):
+        nodes = nodes_emb.reshape(int(math.sqrt(nodes_emb.shape[0])), int(math.sqrt(nodes_emb.shape[0])), -1)
+        return torch.diagonal(nodes).transpose(0, 1)
+    
     def adaptive_scale(self, batch):
         strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
         # Scaling the loss functions based on the algorithm choice
@@ -83,6 +87,7 @@ class MOModel(pl.LightningModule):
         edge_rep_variable.grad.data.zero_()
         optimizer.zero_grad()
         out_node = self.readout_node(node_rep_variable)
+        out_node = self.node_filter(out_node)
         loss_node = self.loss_node(out_node, strokes_label)
         loss_data['node'] = loss_node.item()
         loss_node.backward()
@@ -115,6 +120,7 @@ class MOModel(pl.LightningModule):
         node_hat = self.readout_node(node_hat)
         edge_hat = self.readout_edge(edge_hat)
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+        node_hat = self.node_filter(node_hat)
         loss_edge = self.loss_edge(edge_hat, edges_label)
         loss_node = self.loss_node(node_hat, strokes_label)
         loss = scale['node']*loss_node + scale['edge'] * loss_edge
@@ -129,6 +135,7 @@ class MOModel(pl.LightningModule):
         node_hat = self.readout_node(node_hat)
         edge_hat = self.readout_edge(edge_hat)
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+        node_hat = self.node_filter(node_hat)
         loss_edge = self.loss_edge(edge_hat, edges_label)
         loss_node = self.loss_node(node_hat, strokes_label)
         # scale = self.adaptive_scale(batch)
