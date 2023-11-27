@@ -70,7 +70,7 @@ class MOModel(pl.LightningModule):
         # rep_variable = Variable(rep.data.clone(), requires_grad=True)
         node_rep_variable = node_rep.clone().detach().requires_grad_(True)
         edge_rep_variable = edge_rep.clone().detach().requires_grad_(True)
-
+        print(node_rep_variable.device, edge_rep_variable.device)
         # Compute gradients of each loss function wrt z
         optimizer.zero_grad()
         out_edge = self.readout_edge(edge_rep_variable)
@@ -79,6 +79,7 @@ class MOModel(pl.LightningModule):
         loss_data['edge'] = loss_edge.item()
         loss_edge.backward()
         grads['edge'] = edge_rep_variable.grad.data.clone().requires_grad_(False)
+        print(grads['edge'].device)
         edge_rep_variable.grad.data.zero_()
         optimizer.zero_grad()
         out_node = self.readout_node(node_rep_variable)
@@ -86,6 +87,7 @@ class MOModel(pl.LightningModule):
         loss_data['node'] = loss_node.item()
         loss_node.backward()
         grads['node'] = node_rep_variable.grad.data.clone().requires_grad_(False)
+        print(grads['node'].device)
         node_rep_variable.grad.data.zero_()
         # Normalize all gradients, this is optional and not included in the paper.
         gn = gradient_normalizers(grads, loss_data, normalization_type='loss+')
@@ -116,6 +118,9 @@ class MOModel(pl.LightningModule):
         loss_edge = self.loss_edge(edge_hat, edges_label)
         loss_node = self.loss_node(node_hat, strokes_label)
         loss = scale['node']*loss_node + scale['edge'] * loss_edge
+        self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
