@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('--data_path', type=str, default='/home/xie-y/data/Edge_GAT/')
 # parser.add_argument('--ckpt_path', type=str, default='/home/xie-y/Edge_GAT/pretrain_logs/S100_R5_Speed_False_lr_0.001/version_2/checkpoints/epoch=26-step=70470.ckpt')
 # parser.add_argument('--results_path', type=str, default='/home/xie-y/Edge_GAT/val_results/')
+parser.add_argument('--mode', type=str, default='pre_train_node')
 parser.add_argument('--stroke_emb_nb', type=int, default=100)
 parser.add_argument('--rel_emb_nb', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=128)
@@ -49,7 +50,7 @@ if not os.path.exists(npz_path):
     make_data(os.path.join(data_path, 'INKML'), npz_path, args.stroke_emb_nb, args.rel_emb_nb, args.speed, 'stroke')
 
 exp_name = 'lr_' + str(args.lr) + '_bs_' + str(args.batch_size) + '_epoch_' + str(args.epoch) + '_dropout_' + str(args.dropout) + '_l1_' + str(args.lambda1) + '_l2_' + str(args.lambda2) + '_max_' +str(args.max_node)
-logger_path = os.path.join(root_path, 'max_10' , npz_name)
+logger_path = os.path.join(root_path, 'log' ,args.mode, npz_name)
 logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
 val_results_path = os.path.join(results_path, npz_name, exp_name)
 if not os.path.exists(val_results_path):
@@ -69,7 +70,8 @@ dm = CROHMEDatamodule(
     reload_dataloaders_every_n_epochs = 1
 )
 
-model = MOModel(
+model = LitModel(
+    mode = args.mode,
     node_input_size = args.stroke_emb_nb,
     edge_input_size = args.rel_emb_nb * 4,
     # gat_input_size = 114,
@@ -92,7 +94,7 @@ model = MOModel(
     lr = args.lr,
     device = args.device,
     min_delta = args.min_delta,
-    patience = args.patience
+    patience = args.patience,
 )
 
 
