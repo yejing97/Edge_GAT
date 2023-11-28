@@ -170,7 +170,7 @@ class LitModel(pl.LightningModule):
         return {
             'optimizer': optimizer,
             'lr_scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.patience, min_lr=self.min_delta, verbose=True),
-            'monitor': 'acc',
+            'monitor': 'val_acc_node',
             'frequency': self.trainer.check_val_every_n_epoch
         }
     
