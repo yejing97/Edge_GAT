@@ -41,7 +41,6 @@ class MainModel(pl.LightningModule):
         self.activation = torch.nn.LeakyReLU()
 
         if self.mode == 'pre_train_node' or self.mode == 'pre_train_edge':
-            print(node_class_nb, edge_class_nb)
             self.node_emb = XceptionTime(node_input_size, node_class_nb)
             self.edge_emb = torch.nn.Linear(edge_input_size, edge_class_nb)
         else:
@@ -53,10 +52,10 @@ class MainModel(pl.LightningModule):
             self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size, edge_gat_hidden_size, node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
             # self.edge_gat = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_output_size, edge_gat_output_size, gat_n_heads, dropout)
 
-            # self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
-            # self.readout_node = Readout(node_gat_output_size, node_class_nb)
+        self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
+        self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
-            self.initialize_weights()
+        self.initialize_weights()
 
         # print('node_emb', get_parameter_number(self.node_emb))
         # print('edge_emb', get_parameter_number(self.edge_emb))
@@ -92,9 +91,10 @@ class MainModel(pl.LightningModule):
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             
-            node_repeat = node_gat_feat.repeat(1, node_gat_feat.shape[0]).reshape(node_gat_feat.shape[1], node_gat_feat.shape[0], node_gat_feat.shape[0])
-            eye = torch.eye(node_gat_feat.shape[0], node_gat_feat.shape[0]).to(node_gat_feat.device).repeat(node_gat_feat.shape[1], 1, 1)
-            node_out = (node_repeat * eye).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], node_gat_feat.shape[1])
-        # node_readout = self.readout_node(node_gat_feat)
-        # edge_readout = self.readout_edge(edge_gat_feat)
-        return node_out, edge_gat_feat
+            # node_repeat = node_gat_feat.repeat(1, node_gat_feat.shape[0]).reshape(node_gat_feat.shape[1], node_gat_feat.shape[0], node_gat_feat.shape[0])
+            # eye = torch.eye(node_gat_feat.shape[0], node_gat_feat.shape[0]).to(node_gat_feat.device).repeat(node_gat_feat.shape[1], 1, 1)
+            # node_out = (node_repeat * eye).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], node_gat_feat.shape[1])
+            node_readout = self.readout_node(node_gat_feat)
+            edge_readout = self.readout_edge(edge_gat_feat)
+        # return node_out, edge_gat_feat
+        return node_readout, edge_readout

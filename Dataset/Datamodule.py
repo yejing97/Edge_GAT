@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 import torch
+import random
 from Dataset.Dataset import CROHMEDataset
 
 class CROHMEDatamodule(pl.LightningDataModule):
@@ -18,28 +19,33 @@ class CROHMEDatamodule(pl.LightningDataModule):
         return super().prepare_data()
     
     def setup(self, stage: str):
-        self.dataset_train = CROHMEDataset('train', self.root_path, self.batch_size, self.max_node)
-        self.dataset_val = CROHMEDataset('val', self.root_path, self.batch_size, self.max_node)
-        self.dataset_test = CROHMEDataset('test', self.root_path, self.batch_size, self.max_node)
+        self.random_padding_size = random.randint(0, 7)
+        print('random_padding_size: ', self.random_padding_size)
+        self.dataset_train = CROHMEDataset('train', self.root_path, self.batch_size, self.max_node, self.random_padding_size)
+        self.dataset_val = CROHMEDataset('val', self.root_path, self.batch_size, self.max_node, self.random_padding_size)
+        self.dataset_test = CROHMEDataset('test', self.root_path, self.batch_size, self.max_node, self.random_padding_size)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
             self.dataset_train, 
-            batch_size = 1, 
+            batch_size = self.batch_size, 
             shuffle = self.shuffle, 
-            num_workers=self.num_workers)
+            num_workers=self.num_workers
+            )
     
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
             self.dataset_val, 
-            batch_size = 1, 
+            batch_size = self.batch_size,
             shuffle = self.shuffle, 
-            num_workers=self.num_workers)
+            num_workers=self.num_workers
+            )
     
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
             self.dataset_test, 
-            batch_size = 1, 
+            batch_size = self.batch_size, 
             shuffle = self.shuffle, 
-            num_workers=self.num_workers)
+            num_workers=self.num_workers
+            )
     

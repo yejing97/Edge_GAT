@@ -1,15 +1,19 @@
 import torch
 import os
 import numpy as np
+import math
 
 class CROHMEDataset(torch.utils.data.Dataset):
-    def __init__(self, data_type, root_path, batch_size, max_node):
+    def __init__(self, data_type, root_path, batch_size, max_node, random_padding_size):
         super().__init__()
+        self.max_node = max_node
+        self.pad = random_padding_size
         self.data_type = data_type
         self.data_path = os.path.join(root_path, self.data_type)
         self.batch_size = batch_size
-        self.data_list = self.make_data_list(max_node)
-        self.group_list, self.batch_node_nb, self.batch_edge_nb = self.make_group_list()
+        self.data_list = os.listdir(self.data_path)
+        # self.group_list, self.batch_node_nb, self.batch_edge_nb = self.make_group_list()
+        self.sub_eq_list = self.make_list()
         self.node_emb_nb = int(root_path.split('/')[-1].split('_')[0].split('S')[1])
         self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1])
 
@@ -39,34 +43,110 @@ class CROHMEDataset(torch.utils.data.Dataset):
             batch_edge_nb.append(sum([int(edge_nb[i]) for i in list]))
         # sum edge for every group
         return group_list, batch_node_nb, batch_edge_nb
-
-    def __getitem__(self, index):
-        batch_list = self.group_list[index]
-        batch_strokes_emb = torch.zeros((self.batch_node_nb[index], self.node_emb_nb, 2))
-        batch_edges_emb = torch.zeros((self.batch_node_nb[index], self.batch_node_nb[index], 4, self.rel_emb_nb))
-        batch_stroke_labels = torch.zeros((self.batch_node_nb[index]))
-        batch_edge_labels = torch.zeros(self.batch_node_nb[index], self.batch_node_nb[index])
-        batch_los = torch.zeros((self.batch_node_nb[index], self.batch_node_nb[index]))
-        start = 0
-        for i in range(len(batch_list)):
-            data = np.load(os.path.join(self.data_path, self.data_list[batch_list[i]]))
-            strokes_emb = torch.from_numpy(data['strokes_emb']).float()
-            batch_strokes_emb[start:start+strokes_emb.shape[0], :, :] = strokes_emb
-            edges_emb = torch.from_numpy(data['edges_emb']).float()
-            batch_edges_emb[start:start+edges_emb.shape[0], start:start+edges_emb.shape[1], :, :] = edges_emb
-            stroke_labels = torch.from_numpy(data['stroke_labels']).long()
-            batch_stroke_labels[start:start+stroke_labels.shape[0]] = stroke_labels
-            edge_labels = torch.from_numpy(data['edge_labels']).long()
-            # edge_labels = torch.where(edge_labels > 1, torch.zeros_like(edge_labels), edge_labels)
-            batch_edge_labels[start:start+edge_labels.shape[0], start:start+edge_labels.shape[1]] = edge_labels
-            los = torch.from_numpy(data['los']).long()
-            batch_los[start:start+los.shape[0], start:start+los.shape[1]] = los
-            start = start + strokes_emb.shape[0]
-        # label = self.edge_filter(batch_edge_labels.reshape(-1), batch_los)
-        return batch_strokes_emb, batch_edges_emb.reshape(self.batch_node_nb[index], self.batch_node_nb[index], edges_emb.shape[2]*edges_emb.shape[3]), batch_los, batch_stroke_labels.long(), batch_edge_labels
     
+    def make_list(self):
+        sub_eq_list = []
+        for name in self.data_list:
+            n = name.split('_')[0]
+            node_nb = int(n.split('E')[0].split('N')[1])
+            if node_nb > self.max_node:
+                sub_eq_list = sub_eq_list + self.padding(name, self.max_node, node_nb, self.pad)
+            else:
+                sub_eq_list = sub_eq_list + [[name, node_nb, 0, node_nb]]
+        return sub_eq_list
+
+    def padding(self, name, max_node, shape, pad):
+        list = []
+        list.append([name, shape, 0, max_node - pad])
+        start = max_node - pad
+        nb = math.ceil((shape + pad) / max_node)
+        for i in range(nb - 1):
+            if i == nb - 2:
+                end = shape
+            else:
+                end = start + max_node
+            list.append([name, shape, start, end])
+            start += max_node
+        return list
+    
+    def __getitem__(self, index):
+        name, node_nb, start, end = self.sub_eq_list[index]
+        data = np.load(os.path.join(self.data_path, name))
+        if end - start == self.max_node:
+            strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
+            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:,:].float()
+            stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()
+            edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+            los = torch.from_numpy(data['los'])[start:end,start:end].long()
+        elif(start == 0 and node_nb > self.max_node):
+            padding_stroke = torch.zeros((self.max_node - end, self.node_emb_nb, 2))
+            padding_edge = torch.zeros((self.max_node, self.max_node, 4, self.rel_emb_nb))
+            padding_stroke_label = torch.zeros((self.max_node - end)).long()
+            padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
+            padding_los = torch.zeros((self.max_node, self.max_node)).long()
+            strokes_emb = torch.cat((padding_stroke, torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()), dim=0)
+            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:,:].float()
+            padding_edge[start + self.pad:,start + self.pad:,:,:] = edges_emb
+            edges_emb = padding_edge
+            stroke_labels = torch.cat((padding_stroke_label, torch.from_numpy(data['stroke_labels'])[start:end].long()), dim=0)
+            edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+            padding_edge_label[start + self.pad:,start + self.pad:] = edge_labels
+            edge_labels = padding_edge_label
+            los = torch.from_numpy(data['los'])[start:end,start:end].long()
+            padding_los[start + self.pad:,start + self.pad:] = los
+            los = padding_los
+        elif(end == node_nb or node_nb <= self.max_node):
+            padding_stroke = torch.zeros((self.max_node - (end-start), self.node_emb_nb, 2))
+            padding_edge = torch.zeros((self.max_node, self.max_node, 4, self.rel_emb_nb))
+            padding_stroke_label = torch.zeros(self.max_node - (end-start)).long()
+            padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
+            padding_los = torch.zeros((self.max_node, self.max_node)).long()
+            strokes_emb = torch.cat((torch.from_numpy(data['strokes_emb'])[start:end,:,:].float(), padding_stroke), dim=0)
+            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:,:].float()
+            padding_edge[:end - start,:end - start,:,:] = edges_emb
+            edges_emb = padding_edge
+            stroke_labels = torch.cat((torch.from_numpy(data['stroke_labels'])[start:end].long(), padding_stroke_label), dim=0)
+            edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+            padding_edge_label[:end - start,:end - start] = edge_labels
+            edge_labels = padding_edge_label
+            los = torch.from_numpy(data['los'])[start:end,start:end].long()
+            padding_los[:end - start,:end - start] = los
+            los = padding_los
+        else:
+            print('error' + name)
+        return strokes_emb, edges_emb, los, stroke_labels, edge_labels
+
+
+    # def __getitem__(self, index):
+    #     batch_list = self.group_list[index]
+    #     batch_strokes_emb = torch.zeros((self.batch_node_nb[index], self.node_emb_nb, 2))
+    #     batch_edges_emb = torch.zeros((self.batch_node_nb[index], self.batch_node_nb[index], 4, self.rel_emb_nb))
+    #     batch_stroke_labels = torch.zeros((self.batch_node_nb[index]))
+    #     batch_edge_labels = torch.zeros(self.batch_node_nb[index], self.batch_node_nb[index])
+    #     batch_los = torch.zeros((self.batch_node_nb[index], self.batch_node_nb[index]))
+    #     start = 0
+    #     for i in range(len(batch_list)):
+    #         data = np.load(os.path.join(self.data_path, self.data_list[batch_list[i]]))
+    #         strokes_emb = torch.from_numpy(data['strokes_emb']).float()
+    #         batch_strokes_emb[start:start+strokes_emb.shape[0], :, :] = strokes_emb
+    #         edges_emb = torch.from_numpy(data['edges_emb']).float()
+    #         batch_edges_emb[start:start+edges_emb.shape[0], start:start+edges_emb.shape[1], :, :] = edges_emb
+    #         stroke_labels = torch.from_numpy(data['stroke_labels']).long()
+    #         batch_stroke_labels[start:start+stroke_labels.shape[0]] = stroke_labels
+    #         edge_labels = torch.from_numpy(data['edge_labels']).long()
+    #         # edge_labels = torch.where(edge_labels > 1, torch.zeros_like(edge_labels), edge_labels)
+    #         batch_edge_labels[start:start+edge_labels.shape[0], start:start+edge_labels.shape[1]] = edge_labels
+    #         los = torch.from_numpy(data['los']).long()
+    #         batch_los[start:start+los.shape[0], start:start+los.shape[1]] = los
+    #         start = start + strokes_emb.shape[0]
+    #     # label = self.edge_filter(batch_edge_labels.reshape(-1), batch_los)
+    #     return batch_strokes_emb, batch_edges_emb.reshape(self.batch_node_nb[index], self.batch_node_nb[index], edges_emb.shape[2]*edges_emb.shape[3]), batch_los, batch_stroke_labels.long(), batch_edge_labels
+    
+    # def __len__(self):
+    #     return len(self.group_list)
+
     def __len__(self):
-        return len(self.group_list)
+        return len(self.sub_eq_list)
 
 
     def balance_graphs(self, node_counts, edge_counts, nodes_per_group):
@@ -116,6 +196,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
         edges_label = edges_label[indices]
         # edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
         return edges_label
+    
+
     # def __getitem__(self, index):
     #     data = np.load(os.path.join(self.data_path, self.data_list[index]))
     #     strokes_emb = torch.from_numpy(data['strokes_emb']).float()

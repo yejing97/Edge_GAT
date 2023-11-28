@@ -78,7 +78,6 @@ class EdgeGraphAttention(pl.LightningModule):
         e = e.squeeze(-1)
 
         # add self connection
-        # print(adj_mat.shape)
         # adj_mat_self = adj_mat.fill_diagonal_(1).unsqueeze(-1)
         adj_mat_self = adj_mat.unsqueeze(-1)
 

@@ -66,11 +66,20 @@ class LitModel(pl.LightningModule):
     def load_batch(self, batch):
         strokes_emb, edges_emb, los, strokes_label, edges_label = batch
         strokes_emb = strokes_emb.squeeze(0)
-        edges_emb = edges_emb.squeeze(0)
-        strokes_label = strokes_label.squeeze(0).long()
-        edges_label = edges_label.squeeze(0).reshape(-1).long()
-        los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
-        return strokes_emb.to(self.d), edges_emb.to(self.d), los.to(self.d), strokes_label.to(self.d), edges_label.to(self.d)
+        strokes_emb = strokes_emb.reshape(strokes_emb.shape[0]*strokes_emb.shape[1], strokes_emb.shape[2], strokes_emb.shape[3])
+        edges_emb = edges_emb.squeeze(0).reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], edges_emb.shape[3]* edges_emb.shape[4])
+        strokes_label = strokes_label.squeeze(0).long().reshape(-1)
+        edges_label = edges_label.squeeze(0).long()
+        # los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
+        los = los + torch.eye(los.shape[1], los.shape[2]).repeat(los.shape[0], 1, 1)
+        new_los = torch.zeros((los.shape[0]*los.shape[1], los.shape[0]*los.shape[2]))
+        new_edges_label = torch.zeros((edges_label.shape[0]*edges_label.shape[1], edges_label.shape[0]*edges_label.shape[2])).long()
+        new_edges_emb = torch.zeros((edges_emb.shape[0]*edges_emb.shape[1], edges_emb.shape[0]*edges_emb.shape[2], edges_emb.shape[3]))
+        for i in range(los.shape[0]):
+            new_los[i*los.shape[1]:(i+1)*los.shape[1], i*los.shape[1]:(i+1)*los.shape[1]] = los[i]
+            new_edges_label[i*edges_label.shape[1]:(i+1)*edges_label.shape[1], i*edges_label.shape[1]:(i+1)*edges_label.shape[1]] = edges_label[i]
+            new_edges_emb[i*edges_emb.shape[1]:(i+1)*edges_emb.shape[1], i*edges_emb.shape[1]:(i+1)*edges_emb.shape[1]] = edges_emb[i]
+        return strokes_emb.to(self.d), new_edges_emb.to(self.d), new_los.unsqueeze(-1).to(self.d), strokes_label.to(self.d), new_edges_label.to(self.d).reshape(-1)
     
     def edge_filter(self, edges_emb, edges_label, los):
         los = los.squeeze().fill_diagonal_(0)
@@ -99,7 +108,6 @@ class LitModel(pl.LightningModule):
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            # print(edge_hat.shape, edges_label.shape)
             # print(torch.where(edges_label == 0, 1, 0).sum())
             loss_edge = self.loss_edge(edge_hat, edges_label)
 
@@ -134,8 +142,8 @@ class LitModel(pl.LightningModule):
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
-            loss_edge = self.loss_edge(edge_hat, edges_label)
 
+            loss_edge = self.loss_edge(edge_hat, edges_label)
             loss_node = self.loss_node(node_hat, strokes_label)
             loss = self.lambda1*loss_node + self.lambda2 * loss_edge
             self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
