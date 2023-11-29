@@ -177,7 +177,12 @@ class LitModel(pl.LightningModule):
         # node_preds, node_labels, edge_preds, edge_labels = all_preds
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        return {
+        if self.mode == 'pre_train_node':
+            return optimizer
+        elif self.mode == 'pre_train_edge':
+            return optimizer
+        elif self.mode == 'train':
+            return {
             'optimizer': optimizer,
             'lr_scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.patience, min_lr=self.min_delta, verbose=True),
             'monitor': 'val_acc_node',
