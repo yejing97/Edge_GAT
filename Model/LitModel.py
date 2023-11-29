@@ -1,4 +1,5 @@
 import torch
+import yaml
 import pytorch_lightning as pl
 from tsai.all import *
 # from labml_nn.graphs.gat import GraphAttentionLayer
@@ -13,32 +14,31 @@ from Model.focalloss import FocalLoss
 torch.set_printoptions(threshold=np.inf)
 
 class LitModel(pl.LightningModule):
-    def __init__(self, **args):
+    def __init__(self, config_path, mode, results_path):
         super().__init__()
-        self.mode = args['mode']
-        self.lambda1 = args['lambda1']
-        self.lambda2 = args['lambda2']
-        self.lr = args['lr']
-        self.node_input_size = args['node_input_size']
-        self.edge_input_size = args['edge_input_size']
-        # self.gat_input_size = args['gat_input_size']
-        self.node_gat_input_size = args['node_gat_input_size']
-        self.edge_gat_input_size = args['edge_gat_input_size']
-        # self.gat_hidden_size = args['gat_hidden_size']
-        self.node_gat_hidden_size = args['node_gat_hidden_size']
-        self.edge_gat_hidden_size = args['edge_gat_hidden_size']
-        # self.gat_output_size = args['gat_output_size']
-        self.node_gat_output_size = args['node_gat_output_size']
-        self.edge_gat_output_size = args['edge_gat_output_size']
-        self.gat_n_heads = args['gat_n_heads']
-        self.node_class_nb = args['node_class_nb']
-        self.edge_class_nb = args['edge_class_nb']
-        self.dropout = args['dropout']
-        self.patience = args['patience']
-        self.min_delta = args['min_delta']
+        self.mode = mode
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        self.lambda1 = config['lambda1']
+        self.lambda2 = config['lambda2']
+        self.lr = float(config['lr'])
+        self.node_input_size = config['stroke_emb_nb']
+        self.edge_input_size = (config['rel_emb_nb'] * 4)
+        self.node_gat_input_size = config['node_gat_input_size']
+        self.edge_gat_input_size = config['edge_gat_input_size']
+        self.node_gat_hidden_size = config['node_gat_hidden_size']
+        self.edge_gat_hidden_size = config['edge_gat_hidden_size']
+        self.node_gat_output_size = config['node_gat_output_size']
+        self.edge_gat_output_size = config['edge_gat_output_size']
+        self.gat_n_heads = config['gat_n_heads']
+        self.node_class_nb = config['node_class_nb']
+        self.edge_class_nb = config['edge_class_nb']
+        self.dropout = config['dropout']
+        self.patience = config['patience']
+        self.min_delta = float(config['min_delta'])
+        self.loss_gamma = config['loss_gamma']
         self.d = 'cuda' if torch.cuda.is_available() else 'cpu'
-        # self.ckpt_path = args['ckpt_path']
-        self.results_path = args['results_path']
+        self.results_path = results_path
 
         self.loss_node = torch.nn.CrossEntropyLoss()
         self.loss_edge = FocalLoss(gamma=2)

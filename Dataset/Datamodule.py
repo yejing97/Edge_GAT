@@ -1,16 +1,19 @@
 import pytorch_lightning as pl
 import torch
 import random
+import yaml
 from Dataset.Dataset import CROHMEDataset
 
 class CROHMEDatamodule(pl.LightningDataModule):
-    def __init__(self, **args) -> None:
+    def __init__(self, npz_path, config_path) -> None:
         super().__init__()
-        self.root_path = args['root_path']
-        self.shuffle = args['shuffle']
-        self.num_workers = args['num_workers']
-        self.batch_size = args['batch_size']
-        self.max_node = args['max_node']
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        self.root_path = npz_path
+        self.shuffle = config['shuffle']
+        self.num_workers = config['num_workers']
+        self.batch_size = config['batch_size']
+        self.max_node = config['max_node']
         # self.train = 'train'
         # self.val = 'val'
         # self.test = 'test'

@@ -1,12 +1,5 @@
-lightning_logs/
-tb_logs/
-pretrain_logs/
 logs/
 val_results/
 finetunning/
 **/__pycache__
-nohup.out
-finetune.log
-new_labels/
-max_10/
 log/
