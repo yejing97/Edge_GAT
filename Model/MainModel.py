@@ -52,10 +52,10 @@ class MainModel(pl.LightningModule):
             self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size, edge_gat_hidden_size, node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
             # self.edge_gat = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_output_size, edge_gat_output_size, gat_n_heads, dropout)
 
-        self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
-        self.readout_node = Readout(node_gat_output_size, node_class_nb)
+            self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
+            self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
-        self.initialize_weights()
+            self.initialize_weights()
 
         # print('node_emb', get_parameter_number(self.node_emb))
         # print('edge_emb', get_parameter_number(self.edge_emb))
