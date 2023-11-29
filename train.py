@@ -27,7 +27,7 @@ parser.add_argument('--num_workers', type=int, default=0)
 parser.add_argument('--min_delta', type=float, default=1e-6)
 parser.add_argument('--patience', type=int, default=30)
 
-parser.add_argument('--lr', type=float, default=1e-6)
+parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--dropout', type=float, default=0.2)
 parser.add_argument('--lambda1', type=float, default=0.6)
 parser.add_argument('--lambda2', type=float, default=0.4)
