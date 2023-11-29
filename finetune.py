@@ -79,8 +79,10 @@ def objective(trial: optuna.trial.Trial):
     npz_name = 'S'+ str(stroke_emb_nb) + '_R' + str(rel_emb_nb)
     npz_path = os.path.join(data_path, npz_name)
     if not os.path.exists(npz_path):
-        os.makedirs(npz_path)
-        make_data(os.path.join(data_path, 'INKML'), npz_path, stroke_emb_nb, rel_emb_nb, speed, 'stroke')
+        print('npz_path not exists')
+        return 0.0
+        # os.makedirs(npz_path)
+        # make_data(os.path.join(data_path, 'INKML'), npz_path, stroke_emb_nb, rel_emb_nb, speed, 'stroke')
     root_path = sys.path[0]
     results_path = os.path.join(root_path, 'val_results')
     # use time to give a unique name for each experiment
