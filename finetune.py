@@ -23,7 +23,7 @@ def objective(trial: optuna.trial.Trial):
     # stroke_emb_nb = 150
     # rel_emb_nb = 10
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 151, step=50)
-    stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [100, 150])
+    stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [5, 10])
     batch_size = trial.suggest_int('batch_size', 8, 32, step=8)
