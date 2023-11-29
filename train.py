@@ -67,7 +67,7 @@ dm = CROHMEDatamodule(
     batch_size = args.batch_size,
     num_workers = args.num_workers,
     max_node = args.max_node,
-    reload_dataloaders_every_n_epochs = 1
+    reload_dataloaders_every_n_epochs = 10
 )
 
 model = LitModel(
