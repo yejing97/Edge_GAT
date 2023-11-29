@@ -19,7 +19,8 @@ class CROHMEDatamodule(pl.LightningDataModule):
         return super().prepare_data()
     
     def setup(self, stage: str):
-        self.random_padding_size = random.randint(0, 7)
+        # self.random_padding_size = random.randint(0, 7)
+        self.random_padding_size = 0
         print('random_padding_size: ', self.random_padding_size)
         self.dataset_train = CROHMEDataset('train', self.root_path, self.batch_size, self.max_node, self.random_padding_size)
         self.dataset_val = CROHMEDataset('val', self.root_path, self.batch_size, self.max_node, self.random_padding_size)
