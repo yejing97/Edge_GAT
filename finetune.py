@@ -26,12 +26,13 @@ def objective(trial: optuna.trial.Trial):
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [10])
-    total_batch_size = trial.suggest_categorical('total_batch_size', [128, 192, 256, 320, 384])
+    total_batch_size = trial.suggest_categorical('total_batch_size', [128, 192, 256])
     # batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
     max_node = trial.suggest_categorical('max_node', [4, 6, 8, 10, 12, 16])
     batch_size = total_batch_size // max_node
     lr = trial.suggest_float('lr', 1e-6, 1e-1, log=True)
-    lambda1 = trial.suggest_float('lambda1', 0.4, 1, step=0.1)
+    # lambda1 = trial.suggest_float('lambda1', 0.4, 1, step=0.1)
+    lambda1 = 0.8
     lambda2 = 1 - lambda1
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     gat_n_heads = trial.suggest_categorical('gat_n_heads', [1, 2, 4, 8])
@@ -44,7 +45,7 @@ def objective(trial: optuna.trial.Trial):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
-    epoch = 300
+    epoch = 100
 
     hyperparameters = dict(
         stroke_emb_nb=stroke_emb_nb,
@@ -63,13 +64,13 @@ def objective(trial: optuna.trial.Trial):
         node_gat_output_size=node_gat_output_size,
         edge_gat_output_size=edge_gat_output_size,
         loss_gamma=2,
-        patience=30,
-        min_delta=0.00001,
+        patience=5,
+        min_delta=1e-8,
         shuffle=True,
         num_workers=0,
         node_class_nb=114,
         edge_class_nb=26,
-        epoch = 300
+        epoch = epoch
         )
 
 
@@ -116,7 +117,7 @@ def objective(trial: optuna.trial.Trial):
         early_stopping = pl.callbacks.EarlyStopping(
             monitor='val_acc_node',
             min_delta=0,
-            patience=40,
+            patience=20,
             verbose=False,
             mode='max'
         )
