@@ -26,8 +26,8 @@ def objective(trial: optuna.trial.Trial):
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [5, 10])
-    batch_size = trial.suggest_int('batch_size', 8, 32, step=8)
-    max_node = trial.suggest_int('max_node', 2,10, step=2)
+    batch_size = trial.suggest_categorical('batch_size', [16, 32])
+    max_node = trial.suggest_categorical('max_node', [6, 8, 10])
     lr = trial.suggest_float('lr', 1e-6, 1e-1, log=True)
     lambda1 = trial.suggest_float('lambda1', 0, 1, step=0.1)
     lambda2 = 1 - lambda1
