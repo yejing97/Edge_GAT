@@ -34,6 +34,7 @@ class MainModel(pl.LightningModule):
 
         self.softmax1 = torch.nn.Softmax(dim=1)
         self.softmax2 = torch.nn.Softmax(dim=2)
+        self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
         self.bn_node_1 = torch.nn.BatchNorm1d(node_gat_hidden_size)
         self.bn_node_2 = torch.nn.BatchNorm1d(node_gat_output_size)
         self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
@@ -46,6 +47,7 @@ class MainModel(pl.LightningModule):
         else:
             self.node_emb = XceptionTime(node_input_size, node_gat_input_size)
             self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_input_size)
+
 
             # self.edge_gat1 = EdgeGraphAttention(self.gat_input_size, self.gat_hidden_size, self.gat_n_heads, dropout = self.dropout)
             self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size, edge_gat_hidden_size, gat_n_heads, dropout = dropout)
@@ -65,7 +67,7 @@ class MainModel(pl.LightningModule):
         # print('readout_edge', get_parameter_number(self.readout_edge))
 
     def initialize_weights(self):
-        for m in [self.edge_gat1, self.edge_gat2]:
+        for m in [self.edge_gat1, self.edge_gat2, self.readout_node, self.readout_edge, self.edge_emb]:
             for name, param in m.named_parameters():
                 if 'weight' in name:
                     torch.nn.init.kaiming_uniform_(param)
@@ -78,6 +80,8 @@ class MainModel(pl.LightningModule):
         elif self.mode == 'train':
             node_emb_feat = self.node_emb(node_in_features.squeeze(0))
             edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
+            edge_emb_feat = self.bn_edge_0(edge_emb_feat.transpose(1, 2)).transpose(1, 2)
+            edge_emb_feat = self.activation(edge_emb_feat)
             node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
             node_gat_feat = self.bn_node_1(node_gat_feat)
             edge_gat_feat = self.bn_edge_1(edge_gat_feat)
