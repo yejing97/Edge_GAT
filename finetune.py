@@ -30,12 +30,12 @@ def objective(trial: optuna.trial.Trial):
     # batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
     max_node = trial.suggest_categorical('max_node', [4, 6, 8, 10, 12, 16])
     batch_size = total_batch_size // max_node
-    lr = trial.suggest_float('lr', 1e-6, 1e-1, log=True)
+    lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
     # lambda1 = trial.suggest_float('lambda1', 0.4, 1, step=0.1)
-    lambda1 = 0.8
+    lambda1 = 0.6
     lambda2 = 1 - lambda1
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
-    gat_n_heads = trial.suggest_categorical('gat_n_heads', [1, 2, 4, 8])
+    gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
     node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [32, 64, 128, 256])
     edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [32, 64, 128, 256])
     node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [32, 64, 128, 256])
