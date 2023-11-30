@@ -25,9 +25,11 @@ def objective(trial: optuna.trial.Trial):
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 151, step=50)
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
-    rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [5, 10])
-    batch_size = trial.suggest_categorical('batch_size', [16, 32])
-    max_node = trial.suggest_categorical('max_node', [6, 8, 10])
+    rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [10])
+    total_batch_size = trial.suggest_categorical('total_batch_size', [128, 192, 256, 320, 384, 448, 512])
+    # batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
+    max_node = trial.suggest_categorical('max_node', [4, 6, 8, 10, 12, 16])
+    batch_size = total_batch_size // max_node
     lr = trial.suggest_float('lr', 1e-6, 1e-1, log=True)
     lambda1 = trial.suggest_float('lambda1', 0, 1, step=0.1)
     lambda2 = 1 - lambda1
@@ -83,56 +85,57 @@ def objective(trial: optuna.trial.Trial):
         return 0.0
         # os.makedirs(npz_path)
         # make_data(os.path.join(data_path, 'INKML'), npz_path, stroke_emb_nb, rel_emb_nb, speed, 'stroke')
-    root_path = sys.path[0]
-    results_path = os.path.join(root_path, 'val_results')
-    # use time to give a unique name for each experiment
-    exp_name = str(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
-    yaml_path = os.path.join(root_path, 'config', npz_name + '_' + exp_name + '.yaml')
-    make_yaml(hyperparameters, yaml_path)
-    # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
-    logger_path = os.path.join(root_path, 'finetunning' , npz_name)
-    logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
-    val_results_path = os.path.join(results_path, npz_name, exp_name)
-    if not os.path.exists(val_results_path):
-        os.makedirs(val_results_path)
-        version = 0
     else:
-        version = len(os.listdir(val_results_path))
-    val_results_version = os.path.join(val_results_path, 'version_' + str(version))
-    os.makedirs(val_results_version)
+        root_path = sys.path[0]
+        results_path = os.path.join(root_path, 'val_results')
+        # use time to give a unique name for each experiment
+        exp_name = str(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
+        yaml_path = os.path.join(root_path, 'config', npz_name + '_' + exp_name + '.yaml')
+        make_yaml(hyperparameters, yaml_path)
+        # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
+        logger_path = os.path.join(root_path, 'finetunning' , npz_name)
+        logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
+        val_results_path = os.path.join(results_path, npz_name, exp_name)
+        if not os.path.exists(val_results_path):
+            os.makedirs(val_results_path)
+            version = 0
+        else:
+            version = len(os.listdir(val_results_path))
+        val_results_version = os.path.join(val_results_path, 'version_' + str(version))
+        os.makedirs(val_results_version)
 
-    model = LitModel(
-        config_path = yaml_path,
-        mode = 'train',
-        results_path = val_results_version
-    )
-    dm = CROHMEDatamodule(
-        npz_path = npz_path,
-        config_path = yaml_path
-    )
-    early_stopping = pl.callbacks.EarlyStopping(
-        monitor='val_acc_node',
-        min_delta=0,
-        patience=40,
-        verbose=False,
-        mode='max'
-    )
+        model = LitModel(
+            config_path = yaml_path,
+            mode = 'train',
+            results_path = val_results_version
+        )
+        dm = CROHMEDatamodule(
+            npz_path = npz_path,
+            config_path = yaml_path
+        )
+        early_stopping = pl.callbacks.EarlyStopping(
+            monitor='val_acc_node',
+            min_delta=0,
+            patience=40,
+            verbose=False,
+            mode='max'
+        )
 
-    trainer = pl.Trainer(
-        max_epochs=epoch,
-        accelerator="auto",
-        devices=1,
-        logger=logger,
-        reload_dataloaders_every_n_epochs=10,
-        callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
-    )
-    try:
-        trainer.fit(model.to(device), dm)
-        return trainer.callback_metrics['val_acc_node'].item()
+        trainer = pl.Trainer(
+            max_epochs=epoch,
+            accelerator="auto",
+            devices=1,
+            logger=logger,
+            reload_dataloaders_every_n_epochs=10,
+            callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
+        )
+        try:
+            trainer.fit(model.to(device), dm)
+            return trainer.callback_metrics['val_acc_node'].item()
 
-    except Exception as e:
-        print(f"An exception occurred during training: {str(e)}")
-        return 0.0
+        except Exception as e:
+            print(f"An exception occurred during training: {str(e)}")
+            return 0.0
 
 
 

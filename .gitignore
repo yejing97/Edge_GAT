@@ -3,3 +3,4 @@ val_results/
 finetunning/
 **/__pycache__
 log/
+config/
