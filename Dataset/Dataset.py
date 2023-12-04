@@ -6,6 +6,7 @@ import math
 class CROHMEDataset(torch.utils.data.Dataset):
     def __init__(self, data_type, root_path, batch_size, max_node, random_padding_size):
         super().__init__()
+        print('random_padding_size: ', random_padding_size)
         self.max_node = max_node
         self.pad = random_padding_size
         self.data_type = data_type
