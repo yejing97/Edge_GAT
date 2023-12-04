@@ -31,7 +31,7 @@ class CROHMEDatamodule(pl.LightningDataModule):
 
     def train_dataloader(self):
         # self.setup('fit')
-        self.random_padding_size = random.randint(0, 3)
+        self.random_padding_size = random.randint(0, 7)
         self.dataset_train = CROHMEDataset('train', self.root_path, self.batch_size, self.max_node, self.random_padding_size)
         return torch.utils.data.DataLoader(
             self.dataset_train, 

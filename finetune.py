@@ -31,9 +31,10 @@ def objective(trial: optuna.trial.Trial):
     max_node = trial.suggest_categorical('max_node', [8, 10, 16])
     batch_size = total_batch_size // max_node
     lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
-    lambda1 = trial.suggest_float('lambda1', 0.4, 1, step=0.1)
+    lambda1 = trial.suggest_float('lambda1', 0.1, 0.4, step=0.1)
     # lambda1 = 0.6
-    lambda2 = 1 - lambda1
+    # lambda2 = 1 - lambda1
+    lambda2 = trial.suggest_float('lambda2', 1, 6, step=1)
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     # gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
     gat_n_heads = 8
@@ -101,7 +102,7 @@ def objective(trial: optuna.trial.Trial):
         yaml_path = os.path.join(root_path, 'config', npz_name + '_' + exp_name + '.yaml')
         make_yaml(hyperparameters, yaml_path)
         # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
-        logger_path = os.path.join(root_path, 'finetunning' , npz_name)
+        logger_path = os.path.join(root_path, 'finetunning_bi' , npz_name)
         logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
         val_results_path = os.path.join(results_path, npz_name, exp_name)
         if not os.path.exists(val_results_path):
@@ -122,7 +123,7 @@ def objective(trial: optuna.trial.Trial):
             config_path = yaml_path
         )
         early_stopping = pl.callbacks.EarlyStopping(
-            monitor='val_acc_node',
+            monitor='val_acc_edge',
             min_delta=0,
             patience=20,
             verbose=False,
@@ -135,11 +136,11 @@ def objective(trial: optuna.trial.Trial):
             devices=1,
             logger=logger,
             reload_dataloaders_every_n_epochs=1,
-            callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
+            callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_edge'), early_stopping]
         )
         try:
             trainer.fit(model.to(device), dm)
-            return trainer.callback_metrics['val_acc_node'].item()
+            return trainer.callback_metrics['val_acc_edge'].item()
 
         except Exception as e:
             print(f"An exception occurred during training: {str(e)}")
