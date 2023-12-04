@@ -77,7 +77,7 @@ def objective(trial: optuna.trial.Trial):
         shuffle=True,
         num_workers=0,
         node_class_nb=114,
-        edge_class_nb=26,
+        edge_class_nb=2,
         epoch = epoch
         )
 
