@@ -85,12 +85,17 @@ class LitModel(pl.LightningModule):
         if edges_emb.shape[1] == 2:
             # print('edge class = 2')
             edges_label = torch.where(edges_label == 1, 1, 0)
-        los = los.squeeze().fill_diagonal_(0)
-        los = torch.triu(los)
-        indices = torch.nonzero(los.reshape(-1)).squeeze()
-        edges_label = edges_label[indices]
-        edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
-        return edges_emb, edges_label
+            indices = torch.nonzero(edges_label.reshape(-1)).squeeze()
+            edges_label = edges_label[indices]
+            edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
+            return edges_emb, edges_label
+        else:
+            los = los.squeeze().fill_diagonal_(0)
+            los = torch.triu(los)
+            indices = torch.nonzero(los.reshape(-1)).squeeze()
+            edges_label = edges_label[indices]
+            edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
+            return edges_emb, edges_label
     
     def training_step(self, batch, batch_idx):
         try:
@@ -168,6 +173,7 @@ class LitModel(pl.LightningModule):
             self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
             self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=False, logger=True)
             self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=False, logger=True)
+
             return acc_node
     
     def on_validation_epoch_end(self) -> None:
