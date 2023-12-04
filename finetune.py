@@ -28,7 +28,7 @@ def objective(trial: optuna.trial.Trial):
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [10])
     total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256])
     # batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
-    max_node = trial.suggest_categorical('max_node', [4, 8, 10, 16])
+    max_node = trial.suggest_categorical('max_node', [8, 10, 16])
     batch_size = total_batch_size // max_node
     lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
     lambda1 = trial.suggest_float('lambda1', 0.4, 1, step=0.1)
