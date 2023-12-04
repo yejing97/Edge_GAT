@@ -85,17 +85,12 @@ class LitModel(pl.LightningModule):
         if edges_emb.shape[1] == 2:
             # print('edge class = 2')
             edges_label = torch.where(edges_label == 1, 1, 0)
-            indices = torch.nonzero(edges_label.reshape(-1)).squeeze()
-            edges_label = edges_label[indices]
-            edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
-            return edges_emb, edges_label
-        else:
-            los = los.squeeze().fill_diagonal_(0)
-            los = torch.triu(los)
-            indices = torch.nonzero(los.reshape(-1)).squeeze()
-            edges_label = edges_label[indices]
-            edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
-            return edges_emb, edges_label
+        los = los.squeeze().fill_diagonal_(0)
+        los = torch.triu(los)
+        indices = torch.nonzero(los.reshape(-1)).squeeze()
+        edges_label = edges_label[indices]
+        edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
+        return edges_emb, edges_label
     
     def training_step(self, batch, batch_idx):
         try:
@@ -168,11 +163,19 @@ class LitModel(pl.LightningModule):
 
             acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
             acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-            self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=False, logger=True)
-            self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=False, logger=True)
+            self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
+            self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
+            self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
+            self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
+            self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
+
+            # if edge_hat.shape[-1] == 2:
+            #     indices = torch.nonzero(edges_label.reshape(-1)).squeeze()
+            #     edge_hat = edge_hat.reshape(-1)[indices]
+            #     edges_label = edges_label.reshape(-1)[indices]
+            #     print(edge_hat.shape, edges_label.shape)
+            #     acc_edge_inner = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+            #     self.log('val_acc_edge_inner', acc_edge_inner, on_epoch=True, prog_bar=True, logger=True)
 
             return acc_node
     
