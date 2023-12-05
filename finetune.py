@@ -13,6 +13,11 @@ import argparse
 import os
 import sys
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--edge_class', type=int, default=2)
+parser.add_argument('--am_type', type=int, default='los')
+parser.add_argument('--node_norm', type=bool, default=False)
+args = parser.parse_args()
 def make_yaml(hyperparameters, yaml_path):
     with open(yaml_path, 'w') as file:
         yaml.dump(hyperparameters, file, default_flow_style=False)
@@ -32,10 +37,15 @@ def objective(trial: optuna.trial.Trial):
     # max_node = trial.suggest_categorical('max_node', 16)
     batch_size = total_batch_size // max_node
     lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
-    lambda1 = trial.suggest_float('lambda1', 0.1, 0.3, step=0.1)
+    if args.edge_class == 2:
+
+        lambda1 = trial.suggest_float('lambda1', 0.1, 0.3, step=0.1)
     # lambda1 = 0.6
     # lambda2 = 1 - lambda1
-    lambda2 = trial.suggest_float('lambda2', 1, 10, step=1)
+        lambda2 = trial.suggest_float('lambda2', 1, 10, step=1)
+    else:
+        lambda1 = 0.6
+        lambda2 = 0.4
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     # gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
     gat_n_heads = 8
@@ -78,8 +88,9 @@ def objective(trial: optuna.trial.Trial):
         shuffle=True,
         num_workers=0,
         node_class_nb=114,
-        edge_class_nb=2,
-        epoch = epoch
+        edge_class_nb=args.edge_class,
+        epoch = epoch,
+        am_type = args.am_type,
         )
 
 
@@ -103,7 +114,8 @@ def objective(trial: optuna.trial.Trial):
         yaml_path = os.path.join(root_path, 'config', npz_name + '_' + exp_name + '.yaml')
         make_yaml(hyperparameters, yaml_path)
         # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
-        logger_path = os.path.join(root_path, 'finetunning_seq' , npz_name)
+        hyp_name = args.am_type + '_nodenorm_' + str(args.node_norm) + '_edgeclass_' + str(args.edge_class)
+        logger_path = os.path.join(root_path, hyp_name, npz_name)
         logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
         val_results_path = os.path.join(results_path, npz_name, exp_name)
         if not os.path.exists(val_results_path):
