@@ -91,6 +91,7 @@ def objective(trial: optuna.trial.Trial):
         edge_class_nb=args.edge_class,
         epoch = epoch,
         am_type = args.am_type,
+        node_norm = args.node_norm
         )
 
 
