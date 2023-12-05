@@ -78,7 +78,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
         for i in range(los.shape[0] - 1):
             am[i][i+1] = 1
             am[i+1][i] = 1
-        los = am
+        # los = am
+        los = torch.logical_and(los.bool(), am.bool()).int()
         if end - start == self.max_node:
             strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
             # strokes_emb = self.normalize_gaussian(strokes_emb)
