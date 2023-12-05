@@ -28,7 +28,8 @@ def objective(trial: optuna.trial.Trial):
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [10])
     total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256])
     # batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
-    max_node = trial.suggest_categorical('max_node', [4, 8, 10, 16])
+    max_node = trial.suggest_categorical('max_node', [8, 10, 12, 16])
+    # max_node = trial.suggest_categorical('max_node', 16)
     batch_size = total_batch_size // max_node
     lr = trial.suggest_float('lr', 1e-6, 1e-2, log=True)
     lambda1 = trial.suggest_float('lambda1', 0.1, 0.3, step=0.1)
@@ -102,7 +103,7 @@ def objective(trial: optuna.trial.Trial):
         yaml_path = os.path.join(root_path, 'config', npz_name + '_' + exp_name + '.yaml')
         make_yaml(hyperparameters, yaml_path)
         # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
-        logger_path = os.path.join(root_path, 'finetunning_bi' , npz_name)
+        logger_path = os.path.join(root_path, 'finetunning_seq' , npz_name)
         logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
         val_results_path = os.path.join(results_path, npz_name, exp_name)
         if not os.path.exists(val_results_path):
