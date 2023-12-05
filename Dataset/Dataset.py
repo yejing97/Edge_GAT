@@ -81,7 +81,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         los = am
         if end - start == self.max_node:
             strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
-            strokes_emb = self.normalize_gaussian(strokes_emb)
+            # strokes_emb = self.normalize_gaussian(strokes_emb)
             edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:,:].float()
             edges_emb = self.normalize_gaussian(edges_emb)
             stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()
@@ -93,7 +93,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
             padding_los = torch.zeros((self.max_node, self.max_node)).long()
             strokes_emb = torch.cat((padding_stroke, torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()), dim=0)
-            strokes_emb = self.normalize_gaussian(strokes_emb)
+            # strokes_emb = self.normalize_gaussian(strokes_emb)
             edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:,:].float()
             edges_emb = self.normalize_gaussian(edges_emb)
             padding_edge[start + self.pad:,start + self.pad:,:,:] = edges_emb
@@ -112,7 +112,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
             padding_los = torch.zeros((self.max_node, self.max_node)).long()
             strokes_emb = torch.cat((torch.from_numpy(data['strokes_emb'])[start:end,:,:].float(), padding_stroke), dim=0)
-            strokes_emb = self.normalize_gaussian(strokes_emb)
+            # strokes_emb = self.normalize_gaussian(strokes_emb)
             edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:,:].float()
             edges_emb = self.normalize_gaussian(edges_emb)
             padding_edge[:end - start,:end - start,:,:] = edges_emb
@@ -130,9 +130,9 @@ class CROHMEDataset(torch.utils.data.Dataset):
 
 
     def normalize_gaussian(self, data):
-        mean = data.mean(dim = -1, keepdim=True)
-        std = data.std(dim = -1, keepdim=True)
-        return (data - mean) / std
+        mean = data.mean(dim = (-2, -1), keepdim=True)
+        std = data.std(dim = (-2, -1), keepdim=True)
+        return (data - mean) / (std + 1e-7)
 
     # def __getitem__(self, index):
     #     batch_list = self.group_list[index]
