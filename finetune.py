@@ -15,7 +15,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--edge_class', type=int, default=2)
-parser.add_argument('--am_type', type=str, default='rel')
+parser.add_argument('--am_type', type=str, default='seq')
 parser.add_argument('--node_norm', type=bool, default=False)
 args = parser.parse_args()
 def make_yaml(hyperparameters, yaml_path):
