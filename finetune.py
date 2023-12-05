@@ -16,7 +16,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--edge_class', type=int, default=26)
 parser.add_argument('--am_type', type=str, default='los')
-parser.add_argument('--node_norm', type=bool, default=False)
+parser.add_argument('--node_norm', type=bool, default=True)
 args = parser.parse_args()
 def make_yaml(hyperparameters, yaml_path):
     with open(yaml_path, 'w') as file:
