@@ -120,8 +120,15 @@ class CROHMEDataset(torch.utils.data.Dataset):
             los = padding_los
         else:
             print('error' + name)
+        strokes_emb = self.normalize_gaussian(strokes_emb)
+        edges_emb = self.normalize_gaussian(edges_emb)
         return strokes_emb, edges_emb, los, stroke_labels, edge_labels
 
+
+    def normalize_gaussian(self, data):
+        mean = data.mean(dim = -1, keepdim=True)
+        std = data.std(dim = -1, keepdim=True)
+        return (data - mean) / std
 
     # def __getitem__(self, index):
     #     batch_list = self.group_list[index]
