@@ -100,7 +100,7 @@ def objective(trial: optuna.trial.Trial):
         data_path = '/home/e19b516g/yejing/data/data_for_graph/'
     else:
         data_path = '/home/xie-y/data/Edge_GAT/'
-    npz_name = 'S'+ str(stroke_emb_nb) + '_R' + str(rel_emb_nb)
+    npz_name = 'S'+ str(stroke_emb_nb) + '_geo_feat'
     npz_path = os.path.join(data_path, npz_name)
     if not os.path.exists(npz_path):
         print('npz_path not exists')
