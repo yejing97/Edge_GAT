@@ -63,7 +63,7 @@ def load_lg(lg_path, dic, los):
                 new_matrix[dic_index.index(int(i)), dic_index.index(int(j))] = vocab.rel2indices([relation])[0]
                 new_matrix[dic_index.index(int(j)), dic_index.index(int(i))] = vocab.rel2indices([relation])[0] + 6
         # make value below the diagonal equal to 0
-    new_matrix = torch.triu(new_matrix)
+    # new_matrix = torch.triu(new_matrix)
     m = new_matrix
 
     for i in range(los.shape[0]):

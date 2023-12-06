@@ -1,7 +1,7 @@
 from Model.LitModel import LitModel
 # from Model.MOModel import MOModel
 from Dataset.Datamodule import CROHMEDatamodule
-from make_data import make_data
+# from make_data import make_data
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -36,12 +36,13 @@ if __name__ == '__main__':
     stroke_emb_nb = cfg['stroke_emb_nb']
     rel_emb_nb = cfg['rel_emb_nb']
     # npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed) + '_' + str(args.norm)
-    npz_name = 'S'+ str(stroke_emb_nb) + '_R' + str(rel_emb_nb)
+    npz_name = 'S'+ str(stroke_emb_nb) + '_geo_feat'
 
     npz_path = os.path.join(data_path, npz_name)
-    if not os.path.exists(npz_path):
-        os.makedirs(npz_path)
-        make_data(os.path.join(data_path, 'INKML'), npz_path, stroke_emb_nb, rel_emb_nb, args.speed, 'stroke')
+    # if not os.path.exists(npz_path):
+        # os.makedirs(npz_path)
+
+        # make_data(os.path.join(data_path, 'INKML'), npz_path, stroke_emb_nb, rel_emb_nb, args.speed, 'stroke')
 
     exp_name = args['config_name']
     logger_path = os.path.join(root_path, args['logs_path'] ,args['mode'], npz_name)

@@ -23,7 +23,7 @@ class LitModel(pl.LightningModule):
         self.lambda2 = config['lambda2']
         self.lr = float(config['lr'])
         self.node_input_size = config['stroke_emb_nb']
-        self.edge_input_size = (config['rel_emb_nb'] * 4)
+        self.edge_input_size = (config['rel_emb_nb'])
         self.node_gat_input_size = config['node_gat_input_size']
         self.edge_gat_input_size = config['edge_gat_input_size']
         self.node_gat_hidden_size = config['node_gat_hidden_size']
@@ -67,7 +67,7 @@ class LitModel(pl.LightningModule):
         strokes_emb, edges_emb, los, strokes_label, edges_label = batch
         strokes_emb = strokes_emb.squeeze(0)
         strokes_emb = strokes_emb.reshape(strokes_emb.shape[0]*strokes_emb.shape[1], strokes_emb.shape[2], strokes_emb.shape[3])
-        edges_emb = edges_emb.squeeze(0).reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], edges_emb.shape[3]* edges_emb.shape[4])
+        edges_emb = edges_emb.squeeze(0).reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], edges_emb.shape[3])
         strokes_label = strokes_label.squeeze(0).long().reshape(-1)
         edges_label = edges_label.squeeze(0).long()
         # los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
