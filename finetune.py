@@ -30,7 +30,7 @@ def objective(trial: optuna.trial.Trial):
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 151, step=50)
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
-    rel_emb_nb = trial.suggest_categorical('rel_emb_nb', 20)
+    rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [20])
     total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256])
     # batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
     max_node = trial.suggest_categorical('max_node', [8, 10, 12, 16])
@@ -44,23 +44,23 @@ def objective(trial: optuna.trial.Trial):
     # lambda2 = 1 - lambda1
         lambda2 = trial.suggest_float('lambda2', 1, 10, step=1)
     else:
-        lambda1 = 0.6
-        lambda2 = 0.4
+        lambda1 = trial.suggest_float('lambda1', 0.1, 0.6, step=0.1)
+        lambda2 = 1 - lambda1
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     # gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
     gat_n_heads = 8
-    # node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [32, 64, 128, 256])
-    node_gat_input_size = 128
-    # edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [32, 64, 128, 256])
-    edge_gat_input_size = 64
-    # node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [32, 64, 128, 256])
-    node_gat_hidden_size = 256
-    edge_gat_hidden_size = 64
-    # edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [32, 64, 128, 256])
-    # node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [32, 64, 128, 256])
-    node_gat_output_size = 128
-    # edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [32, 64, 128, 256])
-    edge_gat_output_size = 32
+    node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [32, 64, 128, 256])
+    # node_gat_input_size = 128
+    edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [32, 64, 128, 256])
+    # edge_gat_input_size = 64
+    node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [32, 64, 128, 256])
+    # node_gat_hidden_size = 256
+    # edge_gat_hidden_size = 64
+    edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [32, 64, 128, 256])
+    node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [32, 64, 128, 256])
+    # node_gat_output_size = 128
+    edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [32, 64, 128, 256])
+    # edge_gat_output_size = 32
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
@@ -116,7 +116,7 @@ def objective(trial: optuna.trial.Trial):
         make_yaml(hyperparameters, yaml_path)
         # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
         hyp_name = args.am_type + '_nodenorm_' + str(args.node_norm) + '_edgeclass_' + str(args.edge_class)
-        logger_path = os.path.join(root_path, hyp_name, npz_name)
+        logger_path = os.path.join(root_path,'finetunning_geo_features', hyp_name, npz_name)
         logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
         val_results_path = os.path.join(results_path, npz_name, exp_name)
         if not os.path.exists(val_results_path):
