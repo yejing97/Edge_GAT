@@ -36,7 +36,7 @@ if __name__ == '__main__':
     stroke_emb_nb = cfg['stroke_emb_nb']
     rel_emb_nb = cfg['rel_emb_nb']
     # npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed) + '_' + str(args.norm)
-    npz_name = 'S'+ str(stroke_emb_nb) + '_geo_feat'
+    npz_name = 'S'+ str(stroke_emb_nb) + '_' + cfg['edge_feat']
 
     npz_path = os.path.join(data_path, npz_name)
     # if not os.path.exists(npz_path):

@@ -19,7 +19,10 @@ class CROHMEDataset(torch.utils.data.Dataset):
         self.sub_eq_list = self.make_list()
         self.node_emb_nb = int(root_path.split('/')[-1].split('_')[0].split('S')[1])
         # self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1])
-        self.rel_emb_nb = 20
+        if root_path.split('/')[-1].split('_')[1] == 'geo_feat':
+            self.rel_emb_nb = 20
+        else:
+            self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1]) *4
 
     def make_data_list(self, max_node):
         if max_node == -1:
@@ -102,7 +105,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             return
         if end - start == self.max_node:
             strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
-            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float()
+            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
             stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()
             edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
         elif(start == 0 and node_nb > self.max_node):
@@ -112,7 +115,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
             padding_los = torch.zeros((self.max_node, self.max_node)).long()
             strokes_emb = torch.cat((padding_stroke, torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()), dim=0)
-            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float()
+            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
             edges_emb = self.normalize_gaussian(edges_emb)
             padding_edge[start + self.pad:,start + self.pad:,:,:] = edges_emb
             edges_emb = padding_edge
@@ -130,7 +133,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
             padding_los = torch.zeros((self.max_node, self.max_node)).long()
             strokes_emb = torch.cat((torch.from_numpy(data['strokes_emb'])[start:end,:,:].float(), padding_stroke), dim=0)
-            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float()
+            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
             # edges_emb = self.normalize_gaussian(edges_emb)
             padding_edge[:end - start,:end - start,:] = edges_emb
             edges_emb = padding_edge

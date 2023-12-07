@@ -65,9 +65,9 @@ class LitModel(pl.LightningModule):
 
     def load_batch(self, batch):
         strokes_emb, edges_emb, los, strokes_label, edges_label = batch
-        strokes_emb = strokes_emb.squeeze(0)
+        # strokes_emb = strokes_emb.squeeze(0)
         strokes_emb = strokes_emb.reshape(strokes_emb.shape[0]*strokes_emb.shape[1], strokes_emb.shape[2], strokes_emb.shape[3])
-        edges_emb = edges_emb.squeeze(0).reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], edges_emb.shape[3])
+        edges_emb = edges_emb.reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], -1)
         strokes_label = strokes_label.squeeze(0).long().reshape(-1)
         edges_label = edges_label.squeeze(0).long()
         # los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
