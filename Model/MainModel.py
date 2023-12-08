@@ -54,7 +54,7 @@ class MainModel(pl.LightningModule):
             self.edge_gat2 = EdgeGraphAttention(node_gat_hidden_size, edge_gat_hidden_size, node_gat_output_size, edge_gat_output_size, 1, is_concat=False, dropout = dropout)
             # self.edge_gat = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_output_size, edge_gat_output_size, gat_n_heads, dropout)
 
-            self.readout_edge = Readout(edge_gat_output_size, edge_class_nb)
+            self.readout_edge = Readout(edge_gat_output_size * 2, edge_class_nb)
             self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
             # self.initialize_weights()
@@ -99,6 +99,10 @@ class MainModel(pl.LightningModule):
             # eye = torch.eye(node_gat_feat.shape[0], node_gat_feat.shape[0]).to(node_gat_feat.device).repeat(node_gat_feat.shape[1], 1, 1)
             # node_out = (node_repeat * eye).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], node_gat_feat.shape[1])
             node_readout = self.readout_node(node_gat_feat)
-            edge_readout = self.readout_edge(edge_gat_feat)
+            edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
+            edge_t = edge_gat_feat.transpose(0, 1)
+
+            edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
+            edge_readout = self.readout_edge(edge_feat_concat.reshape(edge_feat_concat.shape[0] * edge_feat_concat.shape[1], edge_feat_concat.shape[2]))
         # return node_out, edge_gat_feat
         return node_readout, edge_readout

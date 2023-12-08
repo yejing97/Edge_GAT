@@ -117,3 +117,4 @@ class Readout(pl.LightningModule):
         x = self.batch_norm(x)
         x = self.softmax(x)
         return x
+    

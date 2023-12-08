@@ -61,7 +61,8 @@ def load_lg(lg_path, dic, los):
         for i in index0:
             for j in index1:
                 new_matrix[dic_index.index(int(i)), dic_index.index(int(j))] = vocab.rel2indices([relation])[0]
-                new_matrix[dic_index.index(int(j)), dic_index.index(int(i))] = vocab.rel2indices([relation])[0] + 6
+                opp_relation = 'O_' + relation
+                new_matrix[dic_index.index(int(j)), dic_index.index(int(i))] = vocab.rel2indices([opp_relation])[0]
         # make value below the diagonal equal to 0
     # new_matrix = torch.triu(new_matrix)
     m = new_matrix
@@ -80,7 +81,6 @@ def load_lg(lg_path, dic, los):
             for j in node[key][0]:
                 if i != j:
                     new_matrix[dic_index.index(int(i)), dic_index.index(int(j))] = vocab.rel2indices(['INNER'])[0]
-    print(new_matrix.max())
     return new_matrix
 
 def load_inkml(file_path):
@@ -113,7 +113,12 @@ def load_inkml(file_path):
             if np.isnan(points_np).any() == True:
                 print(file_path)
             if dic.__contains__(id):
-                labels.append(dic[id])
+                if dic[id] == '<':
+                    labels.append('\lt')
+                elif dic[id] == '>':
+                    labels.append('\gt')
+                else:
+                    labels.append(dic[id])
             else:
                 labels.append('None')
                 dic[id] = 'None'

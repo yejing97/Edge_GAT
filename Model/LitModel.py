@@ -86,7 +86,7 @@ class LitModel(pl.LightningModule):
             # print('edge class = 2')
             edges_label = torch.where(edges_label == 1, 1, 0)
         los = los.squeeze().fill_diagonal_(0)
-        # los = torch.triu(los)
+        los = torch.triu(los)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
         edges_label = edges_label[indices]
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]

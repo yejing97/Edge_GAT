@@ -11,8 +11,8 @@ class CROHMEVocab:
     # EOS_IDX = 2
     def __init__(
         self,
-        dict_sym: str = sys.path[0] + '/vocab/dictionary.txt',
-        dict_rel: str = sys.path[0] + '/vocab/relation.txt'
+        dict_sym: str = sys.path[0] + '/vocab/new_dic.txt',
+        dict_rel: str = sys.path[0] + '/vocab/new_rel.txt'
         # dict_rel: str = './vocab/relation.txt'
         ) -> None:
         self.word2idx = dict()
@@ -21,8 +21,8 @@ class CROHMEVocab:
         # self.word2idx["<eos>"] = self.EOS_IDX
         
         self.rel2idx = dict()
-        self.rel2idx["NO_RELATION"] = self.NO_RELATION
-        self.rel2idx["INNER"] = self.INNER
+        # self.rel2idx["NO_RELATION"] = self.NO_RELATION
+        # self.rel2idx["INNER"] = self.INNER
 
 
         with open(dict_sym, "r") as f:
