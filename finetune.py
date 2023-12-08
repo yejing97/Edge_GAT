@@ -90,7 +90,7 @@ def objective(trial: optuna.trial.Trial):
         min_delta=1e-4,
         shuffle=True,
         num_workers=0,
-        node_class_nb=114,
+        node_class_nb=102,
         edge_class_nb=args.edge_class,
         epoch = epoch,
         am_type = args.am_type,
