@@ -57,7 +57,7 @@ class MainModel(pl.LightningModule):
             self.readout_edge = Readout(edge_gat_output_size * 2, edge_class_nb)
             self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
-            # self.initialize_weights()
+            self.initialize_weights()
 
         # print('node_emb', get_parameter_number(self.node_emb))
         # print('edge_emb', get_parameter_number(self.edge_emb))
