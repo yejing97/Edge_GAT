@@ -85,6 +85,8 @@ class LitModel(pl.LightningModule):
         if edges_emb.shape[1] == 2:
             # print('edge class = 2')
             edges_label = torch.where(edges_label == 1, 1, 0)
+        elif edges_emb.shape[1] == 14:
+            edges_label = torch.where(edges_label < 14, edges_label, 0)
         los = los.squeeze().fill_diagonal_(0)
         los = torch.triu(los)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
