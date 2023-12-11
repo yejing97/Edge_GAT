@@ -14,7 +14,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
         self.data_type = data_type
         self.data_path = os.path.join(root_path, self.data_type)
         self.batch_size = batch_size
-        self.data_list = self.make_data_list(self.max_node)
+        # self.data_list = self.make_data_list(self.max_node)
+        self.data_list = os.listdir(os.path.join(self.data_path, 'los'))
         # self.group_list, self.batch_node_nb, self.batch_edge_nb = self.make_group_list()
         self.sub_eq_list = self.make_list()
         self.node_emb_nb = int(root_path.split('/')[-1].split('_')[0].split('S')[1])
@@ -110,14 +111,14 @@ class CROHMEDataset(torch.utils.data.Dataset):
             edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
         elif(start == 0 and node_nb > self.max_node):
             padding_stroke = torch.zeros((self.max_node - end, self.node_emb_nb, 2))
-            padding_edge = torch.zeros((self.max_node, self.max_node, 4, self.rel_emb_nb))
+            padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
             padding_stroke_label = torch.zeros((self.max_node - end)).long()
             padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
             padding_los = torch.zeros((self.max_node, self.max_node)).long()
             strokes_emb = torch.cat((padding_stroke, torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()), dim=0)
             edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
-            edges_emb = self.normalize_gaussian(edges_emb)
-            padding_edge[start + self.pad:,start + self.pad:,:,:] = edges_emb
+            # edges_emb = self.normalize_gaussian_edge(edges_emb)
+            padding_edge[start + self.pad:,start + self.pad:,:] = edges_emb
             edges_emb = padding_edge
             stroke_labels = torch.cat((padding_stroke_label, torch.from_numpy(data['stroke_labels'])[start:end].long()), dim=0)
             edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
