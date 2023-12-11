@@ -52,14 +52,21 @@ class EdgeGraphAttention(pl.LightningModule):
         self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(dropout)
 
+        self.bn_ll = nn.BatchNorm1d(self.n_hidden_node * n_heads)
+        self.bn_lr = nn.BatchNorm1d(self.n_hidden_node * n_heads)
+        self.bn_lb = nn.BatchNorm1d(self.n_hidden_edge * n_heads)
+
     def forward(self, h: torch.Tensor, b: torch.Tensor, adj_mat: torch.Tensor):
 
         n_nodes = h.shape[0]
 
-        g_l = self.linear_l(h).view(n_nodes, self.n_heads, self.n_hidden_node)
-        g_r = self.linear_r(h).view(n_nodes, self.n_heads, self.n_hidden_node)
+        g_l = self.linear_l(h)
+        g_l = self.bn_ll(g_l).view(n_nodes, self.n_heads, self.n_hidden_node)
+        g_r = self.linear_r(h)
+        g_r = self.bn_lr(g_r).view(n_nodes, self.n_heads, self.n_hidden_node)
 
-        g_b = self.linear_b(b).view(n_nodes*n_nodes, self.n_heads, self.n_hidden_edge)
+        g_b = self.linear_b(b).view(n_nodes*n_nodes, self.n_heads*self.n_hidden_edge)
+        g_b = self.bn_lb(g_b).view(n_nodes*n_nodes, self.n_heads, self.n_hidden_edge)
         g_l_repeat = g_l.repeat(n_nodes, 1, 1)
 
         g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=0)
@@ -108,13 +115,13 @@ class Readout(pl.LightningModule):
     def __init__(self, in_features: int, class_nb: int) -> None:
         super().__init__()
         self.linear = nn.Linear(in_features, class_nb)
-        # self.batch_norm = nn.BatchNorm1d(class_nb)
+        self.batch_norm = nn.BatchNorm1d(class_nb)
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self, x):
         x = x.reshape(-1, x.shape[-1])
         x = self.linear(x)
-        # x = self.batch_norm(x)
+        x = self.batch_norm(x)
         x = self.softmax(x)
         return x
     

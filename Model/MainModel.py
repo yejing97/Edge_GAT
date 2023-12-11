@@ -57,7 +57,7 @@ class MainModel(pl.LightningModule):
             self.readout_edge = Readout(edge_gat_output_size * 2, edge_class_nb)
             self.readout_node = Readout(node_gat_output_size, node_class_nb)
 
-            self.initialize_weights()
+            # self.initialize_weights()
 
         # print('node_emb', get_parameter_number(self.node_emb))
         # print('edge_emb', get_parameter_number(self.edge_emb))
@@ -69,6 +69,7 @@ class MainModel(pl.LightningModule):
     def initialize_weights(self):
         for m in [self.edge_gat1, self.edge_gat2, self.readout_node, self.readout_edge, self.edge_emb]:
             for name, param in m.named_parameters():
+                print(name)
                 if 'weight' in name:
                     torch.nn.init.kaiming_uniform_(param)
 
