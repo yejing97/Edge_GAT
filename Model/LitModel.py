@@ -198,7 +198,7 @@ class LitModel(pl.LightningModule):
         elif self.mode == 'train':
             return {
             'optimizer': optimizer,
-            'lr_scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.patience, min_lr=self.min_delta, verbose=True),
+            'lr_scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.patience, verbose=True, mode='max'),
             'monitor': 'val_acc_node',
             'frequency': self.trainer.check_val_every_n_epoch
         }
