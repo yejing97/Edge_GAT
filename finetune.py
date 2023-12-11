@@ -14,7 +14,7 @@ import os
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--edge_class', type=int, default=26)
+parser.add_argument('--edge_class', type=int, default=14)
 parser.add_argument('--am_type', type=str, default='los')
 parser.add_argument('--node_norm', type=bool, default=True)
 parser.add_argument('--edge_feat', type=str, default='R10')
@@ -47,8 +47,8 @@ def objective(trial: optuna.trial.Trial):
     else:
         lambda1 = trial.suggest_float('lambda1', 0.1, 0.8, step=0.05)
         lambda2 = 1 - lambda1
-    # dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
-    dropout = trial.suggest_categorical('dropout', [0.3])
+    dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
+    # dropout = trial.suggest_categorical('dropout', [0.3])
     # gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
     gat_n_heads = 8
     # node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [32, 64, 128, 256])
@@ -119,7 +119,7 @@ def objective(trial: optuna.trial.Trial):
         make_yaml(hyperparameters, yaml_path)
         # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
         hyp_name = args.am_type + '_nodenorm_' + str(args.node_norm) + '_edgeclass_' + str(args.edge_class)
-        logger_path = os.path.join(root_path,'finetunning_14_init', hyp_name, npz_name)
+        logger_path = os.path.join(root_path,'finetunning_14', hyp_name, npz_name)
         logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
         val_results_path = os.path.join(results_path, npz_name, exp_name)
         if not os.path.exists(val_results_path):
