@@ -15,7 +15,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         self.data_path = os.path.join(root_path, self.data_type)
         self.batch_size = batch_size
         # self.data_list = self.make_data_list(self.max_node)
-        self.data_list = os.listdir(os.path.join(self.data_path, 'los'))
+        self.data_list = os.listdir(os.path.join(self.data_path, 'los'))[:2000]
         # self.group_list, self.batch_node_nb, self.batch_edge_nb = self.make_group_list()
         self.sub_eq_list = self.make_list()
         self.node_emb_nb = int(root_path.split('/')[-1].split('_')[0].split('S')[1])
