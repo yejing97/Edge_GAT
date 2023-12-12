@@ -156,7 +156,7 @@ def objective(trial: optuna.trial.Trial):
             accelerator="auto",
             devices=1,
             logger=logger,
-            reload_dataloaders_every_n_epochs=1,
+            reload_dataloaders_every_n_epochs=reload_dataloaders_every_n_epochs,
             callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_edge'), early_stopping]
         )
         try:
