@@ -40,7 +40,8 @@ class LitModel(pl.LightningModule):
         self.d = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.results_path = results_path
 
-        self.loss_node = torch.nn.CrossEntropyLoss()
+        # self.loss_node = torch.nn.CrossEntropyLoss()
+        self.loss_node = FocalLoss(gamma=2)
         self.loss_edge = FocalLoss(gamma=2)
 
         self.validation_step_outputs = []
