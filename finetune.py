@@ -52,21 +52,21 @@ def objective(trial: optuna.trial.Trial):
     dropout = trial.suggest_categorical('dropout', [0.3])
     # gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
     gat_n_heads = 8
-    # node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [64, 128, 256])
-    # edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [64, 128, 256])
-    # node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [64, 128, 256])
-    # edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [64, 128, 256])
-    # node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [64, 128, 256])
-    # edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [64, 128, 256])
+    node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [64, 128, 256])
+    edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [64, 128, 256])
+    node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [64, 128, 256])
+    edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [64, 128, 256])
+    node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [64, 128, 256])
+    edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [64, 128, 256])
 
     reload_dataloaders_every_n_epochs = args.reload_dataloaders_every_n_epochs
 
-    node_gat_input_size = 128
-    edge_gat_input_size = 64
-    node_gat_hidden_size = 256
-    edge_gat_hidden_size = 64
-    node_gat_output_size = 128
-    edge_gat_output_size = 32
+    # node_gat_input_size = 128
+    # edge_gat_input_size = 64
+    # node_gat_hidden_size = 256
+    # edge_gat_hidden_size = 64
+    # node_gat_output_size = 128
+    # edge_gat_output_size = 32
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
