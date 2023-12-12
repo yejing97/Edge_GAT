@@ -38,7 +38,7 @@ def objective(trial: optuna.trial.Trial):
     max_node = trial.suggest_categorical('max_node', [16])
     # max_node = trial.suggest_categorical('max_node', 16)
     # batch_size = total_batch_size // max_node
-    lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)
+    lr = trial.suggest_float('lr', 1e-5, 1e-3, log=True)
     if args.edge_class == 2:
 
         lambda1 = trial.suggest_float('lambda1', 0.1, 0.3, step=0.05)
