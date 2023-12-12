@@ -11,7 +11,7 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config_name', type=str, default = 'S150_R10_14')
+parser.add_argument('--config_name', type=str, default = 'S150_R10_14_re10')
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--results_path', type=str, default='val_results')
 parser.add_argument('--logs_path', type=str, default='logs')
@@ -68,6 +68,6 @@ if __name__ == '__main__':
         results_path = val_results_path
     )
 
-    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto", devices=1, logger=logger,reload_dataloaders_every_n_epochs=1)
+    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto", devices=1, logger=logger,reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'])
     # trainer.logger.log_hyperparams(hyperparameters)
     trainer.fit(model.to(device), dm)
