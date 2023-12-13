@@ -97,7 +97,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         for i in range(los.shape[0] - 1):
             am[i][i+1] = 1
             am[i+1][i] = 1
-        if self.am_type == 'los':
+        if self.am_type == 'los' or self.am_type == 'seg':
         # los = am
             los = torch.logical_and(los.bool(), am.bool()).int()
         elif self.am_type == 'seq':
@@ -153,7 +153,14 @@ class CROHMEDataset(torch.utils.data.Dataset):
             strokes_emb = self.normalize_gaussian_node(strokes_emb)
         edges_emb = self.normalize_gaussian_edge(edges_emb)
         
-        return strokes_emb, edges_emb, los, stroke_labels, edge_labels
+        if self.am_type == 'seg':
+            labels = torch.zeros(self.max_node)
+            edge_labels = torch.where(edge_labels == 1, 1, 0)
+            for i in range(self.max_node - 1):
+                labels[i] = edge_labels[i,i+1]
+            return strokes_emb, labels
+        else:
+            return strokes_emb, edges_emb, los, stroke_labels, edge_labels
 
 
     def normalize_gaussian_edge(self, data):
