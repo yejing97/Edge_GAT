@@ -169,6 +169,7 @@ class LitModel(pl.LightningModule):
             return acc
         elif self.mode == 'train':
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+            self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
@@ -180,7 +181,7 @@ class LitModel(pl.LightningModule):
                 acc_edge = 1
             loss_node = self.loss_node(node_hat, strokes_label)
             loss = self.lambda1*loss_node + self.lambda2 * loss_edge
-            self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
+            # self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
 
             acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
             # acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
@@ -204,7 +205,7 @@ class LitModel(pl.LightningModule):
         # return super().on_validation_epoch_end()
         all_preds = self.validation_step_outputs
         epoch_id = self.current_epoch
-        if epoch_id % 50 == 0:
+        if epoch_id % 30 == 0:
             torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
         self.validation_step_outputs.clear()
         # node_preds, node_labels, edge_preds, edge_labels = all_preds
