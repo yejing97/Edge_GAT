@@ -79,20 +79,35 @@ class MainModel(pl.LightningModule):
         elif self.mode == 'pre_train_edge':
             return self.edge_emb(edge_in_features.squeeze(0))
         elif self.mode == 'train':
-            node_emb_feat = self.node_emb(node_in_features.squeeze(0))
-            edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
-            edge_emb_feat = self.bn_edge_0(edge_emb_feat.transpose(1, 2)).transpose(1, 2)
+            node_emb_feat = self.node_emb(node_in_features)
+            edge_emb_feat = self.edge_emb(edge_in_features)
+            # print(edge_emb_feat.shape)
+            try:
+                edge_emb_feat = self.bn_edge_0(edge_emb_feat.transpose(1, 2)).transpose(1, 2)
+            except:
+                edge_emb_feat = edge_emb_feat
+                
             edge_emb_feat = self.activation(edge_emb_feat)
             node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
-            node_gat_feat = self.bn_node_1(node_gat_feat)
-            edge_gat_feat = self.bn_edge_1(edge_gat_feat)
+            try:
+                node_gat_feat = self.bn_node_1(node_gat_feat)
+                edge_gat_feat = self.bn_edge_1(edge_gat_feat)
+            except:
+                node_gat_feat = node_gat_feat
+                edge_gat_feat = edge_gat_feat
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             # print('node_gat_feat', node_gat_feat.shape)
             # print('edge_gat_feat', edge_gat_feat.shape)
             node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
-            node_gat_feat = self.bn_node_2(node_gat_feat)
-            edge_gat_feat = self.bn_edge_2(edge_gat_feat)
+            try:
+                node_gat_feat = self.bn_node_2(node_gat_feat)
+                edge_gat_feat = self.bn_edge_2(edge_gat_feat)
+            except:
+                node_gat_feat = node_gat_feat
+                edge_gat_feat = edge_gat_feat
+            # node_gat_feat = self.bn_node_2(node_gat_feat)
+            # edge_gat_feat = self.bn_edge_2(edge_gat_feat)
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             

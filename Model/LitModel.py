@@ -70,8 +70,8 @@ class LitModel(pl.LightningModule):
         # strokes_emb = strokes_emb.squeeze(0)
         strokes_emb = strokes_emb.reshape(strokes_emb.shape[0]*strokes_emb.shape[1], strokes_emb.shape[2], strokes_emb.shape[3])
         edges_emb = edges_emb.reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], -1)
-        strokes_label = strokes_label.squeeze(0).long().reshape(-1)
-        edges_label = edges_label.squeeze(0).long()
+        strokes_label = strokes_label.long().reshape(-1)
+        edges_label = edges_label.long()
         # los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
         los = los + torch.eye(los.shape[1], los.shape[2]).repeat(los.shape[0], 1, 1).to(self.d)
         new_los = torch.zeros((los.shape[0]*los.shape[1], los.shape[0]*los.shape[2])).to(self.d)
@@ -89,9 +89,10 @@ class LitModel(pl.LightningModule):
             edges_label = torch.where(edges_label == 1, 1, 0)
         elif edges_emb.shape[1] == 14:
             edges_label = torch.where(edges_label < 14, edges_label, 0)
-        los = los.squeeze().fill_diagonal_(0)
+        los = los.squeeze(2).fill_diagonal_(0)
         los = torch.triu(los)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
+        # print(indices)
         edges_label = edges_label[indices]
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
         return edges_emb, edges_label
@@ -103,12 +104,12 @@ class LitModel(pl.LightningModule):
         return node_emb, node_label
     
     def training_step(self, batch, batch_idx):
-        try:
-            strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
-        except:
-            print('error with batch ' + str(batch_idx))
-            print('stroke_emb', batch[0].shape)
-            return
+        # try:
+        strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
+        # except:
+            # print('error with batch ' + str(batch_idx))
+            # print('stroke_emb', batch[0].shape)
+            # return
         if self.mode == 'pre_train_node':
             node_hat = self.model(strokes_emb, edges_emb, los)
             loss_node = self.loss_node(node_hat, strokes_label)
@@ -128,7 +129,11 @@ class LitModel(pl.LightningModule):
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
-            loss_edge = self.loss_edge(edge_hat, edges_label)
+            # print('edges_label', edges_label.shape)
+            try:
+                loss_edge = self.loss_edge(edge_hat, edges_label)
+            except:
+                loss_edge = 0
 
             loss_node = self.loss_node(node_hat, strokes_label)
             # loss_edge = self.loss_edge(edge_hat, edges_label)
@@ -167,8 +172,12 @@ class LitModel(pl.LightningModule):
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
-
-            loss_edge = self.loss_edge(edge_hat, edges_label)
+            try:
+                loss_edge = self.loss_edge(edge_hat, edges_label)
+                acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+            except:
+                loss_edge = 0
+                acc_edge = 1
             loss_node = self.loss_node(node_hat, strokes_label)
             loss = self.lambda1*loss_node + self.lambda2 * loss_edge
             self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
@@ -195,7 +204,7 @@ class LitModel(pl.LightningModule):
         # return super().on_validation_epoch_end()
         all_preds = self.validation_step_outputs
         epoch_id = self.current_epoch
-        if epoch_id % 10 == 0:
+        if epoch_id % 50 == 0:
             torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
         self.validation_step_outputs.clear()
         # node_preds, node_labels, edge_preds, edge_labels = all_preds

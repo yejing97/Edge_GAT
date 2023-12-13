@@ -25,15 +25,15 @@ class CROHMEDataset(torch.utils.data.Dataset):
         else:
             self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1]) *4
 
-    def make_data_list(self, max_node):
-        if max_node == -1:
-            return os.listdir(os.path.join(self.data_path, 'los'))
-        else:
-            data_list = []
-            for name in os.listdir(os.path.join(self.data_path, 'los')):
-                if int(name.split('E')[0].split('N')[1]) <= max_node:
-                    data_list.append(name)
-            return data_list
+    # def make_data_list(self, max_node):
+    #     if max_node == -1:
+    #         return os.listdir(os.path.join(self.data_path, 'los'))
+    #     else:
+    #         data_list = []
+    #         for name in os.listdir(os.path.join(self.data_path, 'los')):
+    #             if int(name.split('E')[0].split('N')[1]) <= max_node:
+    #                 data_list.append(name)
+    #         return data_list
 
     def make_group_list(self):
         node_nb = []
@@ -89,78 +89,97 @@ class CROHMEDataset(torch.utils.data.Dataset):
 
     
     def __getitem__(self, index):
-        name, node_nb, start, end = self.sub_eq_list[index]
-        # data = np.load(os.path.join(self.data_path, name))
+        if self.data_type == 'val':
+            return self.getitem_val(index)
+        else:
+            name, node_nb, start, end = self.sub_eq_list[index]
+            # data = np.load(os.path.join(self.data_path, name))
+            data = self.load_data(self.data_path, name)
+            los = torch.from_numpy(data['los'])[start:end,start:end].long()
+            am = torch.zeros((los.shape[0], los.shape[1]), dtype=int)
+            for i in range(los.shape[0] - 1):
+                am[i][i+1] = 1
+                am[i+1][i] = 1
+            if self.am_type == 'los' or self.am_type == 'seg':
+            # los = am
+                los = torch.logical_or(los.bool(), am.bool()).int()
+            elif self.am_type == 'seq':
+                los = am
+            else:
+                print('error am_type')
+                return
+            if end - start == self.max_node:
+                strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
+                edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
+                stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()
+                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+            elif(start == 0 and node_nb > self.max_node):
+                padding_stroke = torch.zeros((self.max_node - end, self.node_emb_nb, 2))
+                padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
+                padding_stroke_label = torch.zeros((self.max_node - end)).long()
+                padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
+                padding_los = torch.zeros((self.max_node, self.max_node)).long()
+                strokes_emb = torch.cat((padding_stroke, torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()), dim=0)
+                edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
+                # edges_emb = self.normalize_gaussian_edge(edges_emb)
+                padding_edge[start + self.pad:,start + self.pad:,:] = edges_emb
+                edges_emb = padding_edge
+                stroke_labels = torch.cat((padding_stroke_label, torch.from_numpy(data['stroke_labels'])[start:end].long()), dim=0)
+                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+                padding_edge_label[start + self.pad:,start + self.pad:] = edge_labels
+                edge_labels = padding_edge_label
+                # los = torch.from_numpy(data['los'])[start:end,start:end].long()
+                padding_los[start + self.pad:,start + self.pad:] = los
+                los = padding_los
+            elif(end == node_nb or node_nb <= self.max_node):
+                padding_stroke = torch.zeros((self.max_node - (end-start), self.node_emb_nb, 2))
+                padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
+                padding_stroke_label = torch.zeros(self.max_node - (end-start)).long()
+                padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
+                padding_los = torch.zeros((self.max_node, self.max_node)).long()
+                strokes_emb = torch.cat((torch.from_numpy(data['strokes_emb'])[start:end,:,:].float(), padding_stroke), dim=0)
+                edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
+                # edges_emb = self.normalize_gaussian(edges_emb)
+                padding_edge[:end - start,:end - start,:] = edges_emb
+                edges_emb = padding_edge
+                stroke_labels = torch.cat((torch.from_numpy(data['stroke_labels'])[start:end].long(), padding_stroke_label), dim=0)
+                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+                padding_edge_label[:end - start,:end - start] = edge_labels
+                edge_labels = padding_edge_label
+                # los = torch.from_numpy(data['los'])[start:end,start:end].long()
+                padding_los[:end - start,:end - start] = los
+                los = padding_los
+            else:
+                print('error' + name)
+
+            if self.node_norm == True:
+                strokes_emb = self.normalize_gaussian_node(strokes_emb)
+            edges_emb = self.normalize_gaussian_edge(edges_emb)
+            
+            if self.am_type == 'seg':
+                labels = torch.zeros(self.max_node)
+                edge_labels = torch.where(edge_labels == 1, 1, 0)
+                for i in range(self.max_node - 1):
+                    labels[i] = edge_labels[i,i+1]
+                return strokes_emb, labels
+            else:
+                return strokes_emb, edges_emb, los, stroke_labels, edge_labels
+    
+    def getitem_val(self, index):
+        name = self.data_list[index]
         data = self.load_data(self.data_path, name)
-        los = torch.from_numpy(data['los'])[start:end,start:end].long()
+        los = torch.from_numpy(data['los']).long()
         am = torch.zeros((los.shape[0], los.shape[1]), dtype=int)
         for i in range(los.shape[0] - 1):
-            am[i][i+1] = 1
-            am[i+1][i] = 1
-        if self.am_type == 'los' or self.am_type == 'seg':
-        # los = am
-            los = torch.logical_and(los.bool(), am.bool()).int()
-        elif self.am_type == 'seq':
-            los = am
-        else:
-            print('error am_type')
-            return
-        if end - start == self.max_node:
-            strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
-            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
-            stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()
-            edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
-        elif(start == 0 and node_nb > self.max_node):
-            padding_stroke = torch.zeros((self.max_node - end, self.node_emb_nb, 2))
-            padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
-            padding_stroke_label = torch.zeros((self.max_node - end)).long()
-            padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
-            padding_los = torch.zeros((self.max_node, self.max_node)).long()
-            strokes_emb = torch.cat((padding_stroke, torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()), dim=0)
-            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
-            # edges_emb = self.normalize_gaussian_edge(edges_emb)
-            padding_edge[start + self.pad:,start + self.pad:,:] = edges_emb
-            edges_emb = padding_edge
-            stroke_labels = torch.cat((padding_stroke_label, torch.from_numpy(data['stroke_labels'])[start:end].long()), dim=0)
-            edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
-            padding_edge_label[start + self.pad:,start + self.pad:] = edge_labels
-            edge_labels = padding_edge_label
-            # los = torch.from_numpy(data['los'])[start:end,start:end].long()
-            padding_los[start + self.pad:,start + self.pad:] = los
-            los = padding_los
-        elif(end == node_nb or node_nb <= self.max_node):
-            padding_stroke = torch.zeros((self.max_node - (end-start), self.node_emb_nb, 2))
-            padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
-            padding_stroke_label = torch.zeros(self.max_node - (end-start)).long()
-            padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
-            padding_los = torch.zeros((self.max_node, self.max_node)).long()
-            strokes_emb = torch.cat((torch.from_numpy(data['strokes_emb'])[start:end,:,:].float(), padding_stroke), dim=0)
-            edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
-            # edges_emb = self.normalize_gaussian(edges_emb)
-            padding_edge[:end - start,:end - start,:] = edges_emb
-            edges_emb = padding_edge
-            stroke_labels = torch.cat((torch.from_numpy(data['stroke_labels'])[start:end].long(), padding_stroke_label), dim=0)
-            edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
-            padding_edge_label[:end - start,:end - start] = edge_labels
-            edge_labels = padding_edge_label
-            # los = torch.from_numpy(data['los'])[start:end,start:end].long()
-            padding_los[:end - start,:end - start] = los
-            los = padding_los
-        else:
-            print('error' + name)
+                am[i][i+1] = 1
+                am[i+1][i] = 1
+        los = torch.logical_or(los.bool(), am.bool()).int()
+        strokes_emb = torch.from_numpy(data['strokes_emb']).float()
+        edges_emb = torch.from_numpy(data['edges_emb']).float().reshape(los.shape[0], los.shape[1], -1)
+        stroke_labels = torch.from_numpy(data['stroke_labels']).long()
+        edge_labels = torch.from_numpy(data['edge_labels']).long()
+        return strokes_emb, edges_emb, los, stroke_labels, edge_labels
 
-        if self.node_norm == True:
-            strokes_emb = self.normalize_gaussian_node(strokes_emb)
-        edges_emb = self.normalize_gaussian_edge(edges_emb)
-        
-        if self.am_type == 'seg':
-            labels = torch.zeros(self.max_node)
-            edge_labels = torch.where(edge_labels == 1, 1, 0)
-            for i in range(self.max_node - 1):
-                labels[i] = edge_labels[i,i+1]
-            return strokes_emb, labels
-        else:
-            return strokes_emb, edges_emb, los, stroke_labels, edge_labels
 
 
     def normalize_gaussian_edge(self, data):
@@ -202,7 +221,10 @@ class CROHMEDataset(torch.utils.data.Dataset):
     #     return len(self.group_list)
 
     def __len__(self):
-        return len(self.sub_eq_list)
+        if self.data_type == 'val' or self.data_type == 'train':
+            return len(self.data_list)
+        else:
+            return len(self.sub_eq_list)
 
 
     def balance_graphs(self, node_counts, edge_counts, nodes_per_group):
