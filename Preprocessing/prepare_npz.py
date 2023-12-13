@@ -12,9 +12,9 @@ import os
 import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--list', type=list, default=['edge_labels', 'stroke_labels'])
+parser.add_argument('--list', type=list, default=['sym_emb_no_norm'])
 parser.add_argument('--parallel', type=bool, default=True)
-parser.add_argument('--tag', type=str, default='train')
+parser.add_argument('--tag', type=str, default='test')
 
 args = parser.parse_args()
 
@@ -31,10 +31,12 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, feat_list):
     # relation feature extraction
     rel_emb = np.zeros((len(strokes), len(strokes), 20), dtype=np.float32)
     sym_emb = np.zeros((len(strokes), stroke_emb_nb, 2), dtype=np.float32)
+    sym_emb_no_norm = np.zeros((len(strokes), stroke_emb_nb, 2), dtype=np.float32)
     for i in range(len(strokes)):
     #     # remove speed for symbol feature
     #     # padded_stroke = np.zeros((stroke_emb_nb, 2), dtype=np.float32)
         stroke = Preprocessing.normalization.Speed_norm_stroke(strokes[i], alpha)
+        sym_emb_no_norm[i,:len(stroke), :] = np.array(stroke)
         stroke = Preprocessing.normalization.stroke_keep_shape(np.array(stroke))
         sym_emb[i,:len(stroke), :] = np.array(stroke)
         for j in range(len(strokes)):
@@ -45,7 +47,8 @@ def make_npz(tgt_path, inkml, lg, stroke_emb_nb, feat_list):
         'rel_emb': rel_emb,
         'edge_labels': edge_labels,
         'stroke_labels': stroke_labels,
-        'los_graph': los_graph
+        'los_graph': los_graph,
+        'sym_emb_no_norm': sym_emb_no_norm
     }
     for feat_name in feat_list:
 

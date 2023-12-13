@@ -79,7 +79,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
     
     def load_data(self, path, name):
         los = np.load(os.path.join(path, 'los' ,name))
-        strokes_emb = np.load(os.path.join(path, 'strokes_emb' ,name))
+        # strokes_emb = np.load(os.path.join(path, 'strokes_emb' ,name))
+        strokes_emb = np.load(os.path.join(path, 'sym_emb_no_norm' ,name))
         edges_emb = np.load(os.path.join(path, 'edges_emb' ,name))
         stroke_labels = np.load(os.path.join(path, 'stroke_labels' ,name))
         edge_labels = np.load(os.path.join(path, 'edge_labels' ,name))
