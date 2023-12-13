@@ -87,7 +87,7 @@ class Seg_LitModel(pl.LightningModule):
         return optimizer
 
 model = Seg_LitModel()
-dm = Seg_DataModule('/home/e19b516g/yejing/data/data_for_graph/S150_R10', 128, True, 0, True, 8)
+dm = Seg_DataModule('/home/xie-y/data/Edge_GAT/S150_R10/', 128, True, 0, True, 8)
 logger = pl.loggers.TensorBoardLogger('gru_logs', name='seg')
 trainer = pl.Trainer(max_epochs=10, logger=logger, accelerator="auto", devices=1, reload_dataloaders_every_n_epochs=1)
 trainer.fit(model.to('cuda'), dm)
