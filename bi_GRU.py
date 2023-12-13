@@ -77,7 +77,7 @@ class Seg_LitModel(pl.LightningModule):
         y_pred = y_hat[:, :, 0].to('cuda')
         loss = F.binary_cross_entropy(y_pred, y)
         # acc = accuracy_score(y.cpu().numpy(), y_pred.cpu().numpy())
-        acc = accuracy_score(y.cpu().numpy(), y_hat.cpu().argmax(dim=2).numpy())
+        acc = accuracy_score(y.cpu().numpy(), y_hat.cpu().argmin(dim=2).numpy())
         self.log('val_loss', loss)
         self.log('val_acc', acc, prog_bar=True)
         return loss
