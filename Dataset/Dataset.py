@@ -79,8 +79,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
     
     def load_data(self, path, name):
         los = np.load(os.path.join(path, 'los' ,name))
-        # strokes_emb = np.load(os.path.join(path, 'strokes_emb' ,name))
-        strokes_emb = np.load(os.path.join(path, 'sym_emb_no_norm' ,name))
+        strokes_emb = np.load(os.path.join(path, 'strokes_emb' ,name))
+        # strokes_emb = np.load(os.path.join(path, 'sym_emb_no_norm' ,name))
         edges_emb = np.load(os.path.join(path, 'edges_emb' ,name))
         stroke_labels = np.load(os.path.join(path, 'stroke_labels' ,name))
         edge_labels = np.load(os.path.join(path, 'edge_labels' ,name))
@@ -178,6 +178,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
         edges_emb = torch.from_numpy(data['edges_emb']).float().reshape(los.shape[0], los.shape[1], -1)
         stroke_labels = torch.from_numpy(data['stroke_labels']).long()
         edge_labels = torch.from_numpy(data['edge_labels']).long()
+        strokes_emb = self.normalize_gaussian_node(strokes_emb)
+        edges_emb = self.normalize_gaussian_edge(edges_emb)
         return strokes_emb, edges_emb, los, stroke_labels, edge_labels
 
 
