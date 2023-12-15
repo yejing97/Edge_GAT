@@ -29,7 +29,7 @@ class MainModel(pl.LightningModule):
             ) -> None:
         super().__init__()
         self.mode = mode
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.d = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.node_input_size = node_input_size
         self.edge_input_size = edge_input_size
 
@@ -133,7 +133,7 @@ class MainModel(pl.LightningModule):
                 dfs(node, component)
                 components.append(component)
         max_node = max(max(component) for component in components) + 1
-        mask = torch.zeros(len(components), max_node, dtype=torch.int).to(self.device)
+        mask = torch.zeros(len(components), max_node, dtype=torch.int).to(self.d)
 
         for i, component in enumerate(components):
             for node in component:
