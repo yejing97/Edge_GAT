@@ -67,24 +67,30 @@ class MainModel(pl.LightningModule):
                     torch.nn.init.kaiming_uniform_(param)
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
+        batch_size = node_in_features.shape[0]
+        n_node = node_in_features.shape[1]
+        node_emb_nb = node_in_features.shape[2]
+        # unzip_node, unzip_edge, unzip_adj_mat = self.unzip_batch(node_in_features, edge_in_features, adj_mat)
         if self.mode == 'pre_train_node':
             return self.node_emb(node_in_features.squeeze(0))
         elif self.mode == 'pre_train_edge':
-            return self.edge_emb(edge_in_features.squeeze(0))
+            return self.edge_emb(node_in_features.squeeze(0))
         elif self.mode == 'train':
-            node_emb_feat = self.node_emb(node_in_features)
+            node_emb_feat = self.node_emb(node_in_features.reshape(batch_size * n_node , node_emb_nb,-1)).reshape(batch_size, n_node, -1)
             edge_emb_feat = self.edge_emb(edge_in_features)
             # print(edge_emb_feat.shape)
             try:
-                edge_emb_feat = self.bn_edge_0(edge_emb_feat.transpose(1, 2)).transpose(1, 2)
+                edge_emb_feat = edge_emb_feat.reshape(batch_size*n_node*n_node, -1)
+                edge_emb_feat = self.bn_edge_0(edge_emb_feat).reshape(batch_size, n_node, n_node, -1)
             except:
                 edge_emb_feat = edge_emb_feat
-                
             edge_emb_feat = self.activation(edge_emb_feat)
             node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
             try:
-                node_gat_feat = self.bn_node_1(node_gat_feat)
-                edge_gat_feat = self.bn_edge_1(edge_gat_feat)
+                node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
+                node_gat_feat = self.bn_node_1(node_gat_feat).reshape(batch_size, n_node, -1)
+                edge_gat_feat = edge_gat_feat.reshape(batch_size*n_node*n_node, -1)
+                edge_gat_feat = self.bn_edge_1(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
             except:
                 node_gat_feat = node_gat_feat
                 edge_gat_feat = edge_gat_feat
@@ -94,8 +100,10 @@ class MainModel(pl.LightningModule):
             # print('edge_gat_feat', edge_gat_feat.shape)
             node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
             try:
-                node_gat_feat = self.bn_node_2(node_gat_feat)
-                edge_gat_feat = self.bn_edge_2(edge_gat_feat)
+                node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
+                node_gat_feat = self.bn_node_2(node_gat_feat).reshape(batch_size, n_node, -1)
+                edge_gat_feat = edge_gat_feat.reshape(batch_size*n_node*n_node, -1)
+                edge_gat_feat = self.bn_edge_2(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
             except:
                 node_gat_feat = node_gat_feat
                 edge_gat_feat = edge_gat_feat
@@ -103,11 +111,11 @@ class MainModel(pl.LightningModule):
             edge_gat_feat = self.activation(edge_gat_feat)
             
 
-            edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
-            edge_t = edge_gat_feat.transpose(0, 1)
+            edge_gat_feat = edge_gat_feat.reshape(batch_size, n_node, n_node, -1)
+            edge_t = edge_gat_feat.transpose(1, 2)
             edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
-            edge_readout = self.readout_edge(edge_feat_concat.reshape(edge_feat_concat.shape[0] * edge_feat_concat.shape[1], edge_feat_concat.shape[2]))
-            cc_graph = torch.argmax(edge_readout, dim=1).reshape(edge_gat_feat.shape[0], edge_gat_feat.shape[0])
+            edge_readout = self.readout_edge(edge_feat_concat.reshape(batch_size, n_node*n_node, -1))
+            cc_graph = torch.argmax(edge_readout, dim=-1).reshape(batch_size, n_node, n_node)
             cc_graph = torch.where(cc_graph == 1, 1, 0)
             node_gat_feat, edge_feat_concat = self.sub_graph_pooling(node_gat_feat, edge_feat_concat, cc_graph)
             node_readout = self.readout_node(node_gat_feat)
@@ -115,45 +123,71 @@ class MainModel(pl.LightningModule):
 
         # return node_out, edge_gat_feat
         return node_readout, edge_readout
-    def connected_components_mask(self, adjacency_matrix):
-        num_nodes = len(adjacency_matrix)
-        visited = np.zeros(num_nodes, dtype=bool)
-        components = []
+    def unzip_batch(self, strokes_emb, edges_emb, los):
+        # strokes_emb, edges_emb, los, strokes_label, edges_label = batch
+        # strokes_emb = strokes_emb.squeeze(0)
+        strokes_emb = strokes_emb.reshape(strokes_emb.shape[0]*strokes_emb.shape[1], strokes_emb.shape[2], strokes_emb.shape[3])
+        edges_emb = edges_emb.reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], -1)
+        # strokes_label = strokes_label.long().reshape(-1)
+        # edges_label = edges_label.long()
+        # los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
+        los = los + torch.eye(los.shape[1], los.shape[2]).repeat(los.shape[0], 1, 1).to(self.d)
+        new_los = torch.zeros((los.shape[0]*los.shape[1], los.shape[0]*los.shape[2])).to(self.d)
+        # new_edges_label = torch.zeros((edges_label.shape[0]*edges_label.shape[1], edges_label.shape[0]*edges_label.shape[2])).long().to(self.d)
+        new_edges_emb = torch.zeros((edges_emb.shape[0]*edges_emb.shape[1], edges_emb.shape[0]*edges_emb.shape[2], edges_emb.shape[3])).to(self.d)
+        for i in range(los.shape[0]):
+            new_los[i*los.shape[1]:(i+1)*los.shape[1], i*los.shape[1]:(i+1)*los.shape[1]] = los[i]
+            # new_edges_label[i*edges_label.shape[1]:(i+1)*edges_label.shape[1], i*edges_label.shape[1]:(i+1)*edges_label.shape[1]] = edges_label[i]
+            new_edges_emb[i*edges_emb.shape[1]:(i+1)*edges_emb.shape[1], i*edges_emb.shape[1]:(i+1)*edges_emb.shape[1]] = edges_emb[i]
+        return strokes_emb.to(self.d), new_edges_emb.to(self.d), new_los.unsqueeze(-1).to(self.d)
 
-        def dfs(node, component):
-            visited[node] = True
+    def connected_components_mask(self, adjacency_matrix):
+        adjacency_matrix = adjacency_matrix.cpu()
+        batch_nb = adjacency_matrix.shape[0]
+        num_nodes = adjacency_matrix.shape[1]
+        visited = torch.zeros(batch_nb, num_nodes, dtype=bool)
+        batch_mask = []
+        def dfs(batch, node, component):
+            visited[batch, node] = True
             component.append(node)
             for neighbor in range(num_nodes):
-                if adjacency_matrix[node][neighbor] == 1 and not visited[neighbor]:
-                    dfs(neighbor, component)
-
-        for node in range(num_nodes):
-            if not visited[node]:
-                component = []
-                dfs(node, component)
-                components.append(component)
-        max_node = max(max(component) for component in components) + 1
-        mask = torch.zeros(len(components), max_node, dtype=torch.int).to(self.d)
-
-        for i, component in enumerate(components):
-            for node in component:
-                mask[i][node] = 1
-        return mask
+                if adjacency_matrix[batch][node][neighbor] == 1 and not visited[batch][neighbor]:
+                    dfs(batch, neighbor, component)
+        for batch in range(batch_nb):
+            components = []
+            for node in range(num_nodes):
+                if not visited[batch, node]:
+                    component = []
+                    dfs(batch, node, component)
+                    components.append(component)
+            max_node = max(max(component) for component in components) + 1
+            mask = torch.zeros(len(components), max_node, dtype=torch.int)
+            for i, component in enumerate(components):
+                for node in component:
+                    mask[i][node] = 1
+            batch_mask.append(mask)
+        return batch_mask
 
     def sub_graph_pooling(self, node_feat, edge_feat, am):
-        mask = self.connected_components_mask(am)
+        batch_mask = self.connected_components_mask(am)
+        batch_node_out = torch.zeros_like(node_feat).to(self.d)
+        batch_edge_out = torch.zeros_like(edge_feat).to(self.d)
+        for i in range(len(batch_mask)):
+            mask = batch_mask[i].to(self.d)
+            node_feat_repeat = node_feat[i].unsqueeze(0).repeat(mask.shape[0], 1,1)
+            avg_pooled_lines = torch.sum(node_feat_repeat * mask.unsqueeze(-1), dim=1)/ mask.sum(dim=1).unsqueeze(-1)
+            node_out = torch.matmul(avg_pooled_lines.t().float(), mask.float()).t()
 
-        node_feat_repeat = node_feat.unsqueeze(0).repeat(mask.shape[0], 1,1)
-        avg_pooled_lines = torch.sum(node_feat_repeat * mask.unsqueeze(-1), dim=1)/ mask.sum(dim=1).unsqueeze(-1)
-        node_out = torch.matmul(avg_pooled_lines.t().float(), mask.float()).t()
+            edge_feat_repeat = edge_feat[i].unsqueeze(0).repeat(mask.shape[0], 1, 1, 1)
+            avg_pooled_lines = torch.sum(edge_feat_repeat * mask.unsqueeze(1).unsqueeze(-1), dim=2)/ mask.sum(dim=1).unsqueeze(1).unsqueeze(-1)
+            edge_out = torch.matmul(avg_pooled_lines.permute(2,1,0).unsqueeze(1), mask.float().t().unsqueeze(2))
 
-        edge_feat_repeat = edge_feat.unsqueeze(0).repeat(mask.shape[0], 1, 1, 1)
-        avg_pooled_lines = torch.sum(edge_feat_repeat * mask.unsqueeze(1).unsqueeze(-1), dim=2)/ mask.sum(dim=1).unsqueeze(1).unsqueeze(-1)
-        edge_out = torch.matmul(avg_pooled_lines.permute(2,1,0).unsqueeze(1), mask.float().t().unsqueeze(2))
+            edge_out_repeat = edge_out.squeeze(-1).permute(2,1,0).unsqueeze(0).repeat(mask.shape[0],1, 1, 1)
+            avg_pooled_lines = torch.sum(edge_out_repeat * mask.unsqueeze(-1).unsqueeze(-1), dim=2)/ mask.sum(dim=1).unsqueeze(1).unsqueeze(-1)
+            edge_out = torch.matmul(avg_pooled_lines.permute(2,1,0).unsqueeze(1), mask.float().t().unsqueeze(2))
 
-        edge_out_repeat = edge_out.squeeze(-1).permute(2,1,0).unsqueeze(0).repeat(mask.shape[0],1, 1, 1)
-        avg_pooled_lines = torch.sum(edge_out_repeat * mask.unsqueeze(-1).unsqueeze(-1), dim=2)/ mask.sum(dim=1).unsqueeze(1).unsqueeze(-1)
-        edge_out = torch.matmul(avg_pooled_lines.permute(2,1,0).unsqueeze(1), mask.float().t().unsqueeze(2))
+            batch_node_out[i] = node_out
+            batch_edge_out[i] = edge_out.squeeze(-1).permute(2,1,0)
 
-        return node_out, edge_out.squeeze(-1).permute(2,1,0)
+        return batch_node_out, batch_edge_out
 
