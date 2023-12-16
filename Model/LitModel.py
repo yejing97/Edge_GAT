@@ -183,6 +183,7 @@ class LitModel(pl.LightningModule):
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
+
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             try:
                 loss_edge = self.loss_edge(edge_hat, edges_label)
