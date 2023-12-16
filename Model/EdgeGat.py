@@ -99,7 +99,7 @@ class EdgeGraphAttention(pl.LightningModule):
 
         a = self.softmax(e)
 
-        a = self.dropout(a)
+        # a = self.dropout(a)
 
 
         #h_{q} = \sum_{i=0}^{N}( \alpha  ^{i,j} \cdot W_{h}\cdot \sum_{j\in \mathcal{N} _{i}} h_{q-1}^{j})

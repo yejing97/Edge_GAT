@@ -84,22 +84,26 @@ class LitModel(pl.LightningModule):
         return strokes_emb.to(self.d), edges_emb.to(self.d), los.unsqueeze(-1).to(self.d), strokes_label.to(self.d), new_edges_label.to(self.d).reshape(-1)
     
     def edge_filter(self, edges_emb, edges_label, los):
-        if edges_emb.shape[1] == 2:
+        # print('edge_emb', edges_emb.shape)
+        # print('edge_label', edges_label.shape)
+        if edges_emb.shape[-1] == 2:
             # print('edge class = 2')
             edges_label = torch.where(edges_label == 1, 1, 0)
-        elif edges_emb.shape[1] == 14:
+        elif edges_emb.shape[-1] == 14:
             edges_label = torch.where(edges_label < 14, edges_label, 0)
         diagonal = torch.arange(los.size(1))
         los[:, diagonal, diagonal] = 0
         # los = los.squeeze(-1).fill_diagonal_(0)
         los = torch.triu(los)
         indices = torch.nonzero(los.reshape(-1)).squeeze()
+        # print('indices', indices.shape)
         edges_label = edges_label.reshape(-1)[indices]
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
         return edges_emb, edges_label
     
     def node_filter(self, node_emb, node_label):
         node_label = node_label.reshape(-1)
+        node_emb = node_emb.reshape(-1, node_emb.shape[-1])
         indices = torch.nonzero(node_label != 0).squeeze()
         node_label = node_label[indices]
         node_emb = node_emb[indices]
@@ -138,10 +142,10 @@ class LitModel(pl.LightningModule):
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
             # print('edges_label', edges_label.shape)
-            try:
-                loss_edge = self.loss_edge(edge_hat, edges_label)
-            except:
-                loss_edge = 0
+            # try:
+            loss_edge = self.loss_edge(edge_hat, edges_label)
+            # except:
+            #     loss_edge = 0
 
             loss_node = self.loss_node(node_hat, strokes_label)
             # loss_edge = self.loss_edge(edge_hat, edges_label)

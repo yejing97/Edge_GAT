@@ -110,18 +110,23 @@ class MainModel(pl.LightningModule):
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             
-
             edge_gat_feat = edge_gat_feat.reshape(batch_size, n_node, n_node, -1)
             edge_t = edge_gat_feat.transpose(1, 2)
             edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
+
             edge_readout = self.readout_edge(edge_feat_concat.reshape(batch_size, n_node*n_node, -1))
+            node_readout = self.readout_node(node_gat_feat)
+
             cc_graph = torch.argmax(edge_readout, dim=-1).reshape(batch_size, n_node, n_node)
             cc_graph = torch.where(cc_graph == 1, 1, 0)
-            node_gat_feat, edge_feat_concat = self.sub_graph_pooling(node_gat_feat, edge_feat_concat, cc_graph)
-            node_readout = self.readout_node(node_gat_feat)
-            edge_readout = self.readout_edge(edge_feat_concat)
+            # print('node_gat_feat', node_gat_feat.shape)
+            # print('node_readout', node_readout.shape)
+            node_readout, edge_readout = self.sub_graph_pooling(node_readout.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
+
+            # edge_readout = self.readout_edge(edge_feat_concat)
 
         # return node_out, edge_gat_feat
+
         return node_readout, edge_readout
     def unzip_batch(self, strokes_emb, edges_emb, los):
         # strokes_emb, edges_emb, los, strokes_label, edges_label = batch
@@ -185,7 +190,7 @@ class MainModel(pl.LightningModule):
             edge_out_repeat = edge_out.squeeze(-1).permute(2,1,0).unsqueeze(0).repeat(mask.shape[0],1, 1, 1)
             avg_pooled_lines = torch.sum(edge_out_repeat * mask.unsqueeze(-1).unsqueeze(-1), dim=2)/ mask.sum(dim=1).unsqueeze(1).unsqueeze(-1)
             edge_out = torch.matmul(avg_pooled_lines.permute(2,1,0).unsqueeze(1), mask.float().t().unsqueeze(2))
-
+            
             batch_node_out[i] = node_out
             batch_edge_out[i] = edge_out.squeeze(-1).permute(2,1,0)
 

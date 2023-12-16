@@ -89,7 +89,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
 
     
     def __getitem__(self, index):
-        if self.data_type == 'val':
+        if self.data_type == 'test':
             return self.getitem_val(index)
         else:
             name, node_nb, start, end = self.sub_eq_list[index]
