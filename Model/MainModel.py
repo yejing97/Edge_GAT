@@ -35,11 +35,14 @@ class MainModel(pl.LightningModule):
 
         self.softmax1 = torch.nn.Softmax(dim=1)
         self.softmax2 = torch.nn.Softmax(dim=2)
-        self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
         self.bn_node_1 = torch.nn.BatchNorm1d(node_gat_hidden_size)
         self.bn_node_2 = torch.nn.BatchNorm1d(node_gat_output_size)
-        self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
-        self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
+        # self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
+        # self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
+        # self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
+        self.bn_edge_0 = torch.nn.BatchNorm2d(edge_gat_input_size)
+        self.bn_edge_1 = torch.nn.BatchNorm2d(edge_gat_hidden_size)
+        self.bn_edge_2 = torch.nn.BatchNorm2d(edge_gat_output_size)
         self.activation = torch.nn.LeakyReLU()
 
         if self.mode == 'pre_train_node' or self.mode == 'pre_train_edge':
@@ -79,34 +82,34 @@ class MainModel(pl.LightningModule):
             node_emb_feat = self.node_emb(node_in_features.reshape(batch_size * n_node , node_emb_nb,-1)).reshape(batch_size, n_node, -1)
             edge_emb_feat = self.edge_emb(edge_in_features)
             # print(edge_emb_feat.shape)
-            try:
-                edge_emb_feat = edge_emb_feat.reshape(batch_size*n_node*n_node, -1)
-                edge_emb_feat = self.bn_edge_0(edge_emb_feat).reshape(batch_size, n_node, n_node, -1)
-            except:
-                edge_emb_feat = edge_emb_feat
+            # try:
+            edge_emb_feat = edge_emb_feat.reshape(batch_size, -1, n_node, n_node)
+            edge_emb_feat = self.bn_edge_0(edge_emb_feat).reshape(batch_size, n_node, n_node, -1)
+            # except:
+            #     edge_emb_feat = edge_emb_feat
             edge_emb_feat = self.activation(edge_emb_feat)
             node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
-            try:
-                node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
-                node_gat_feat = self.bn_node_1(node_gat_feat).reshape(batch_size, n_node, -1)
-                edge_gat_feat = edge_gat_feat.reshape(batch_size*n_node*n_node, -1)
-                edge_gat_feat = self.bn_edge_1(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
-            except:
-                node_gat_feat = node_gat_feat
-                edge_gat_feat = edge_gat_feat
+            # try:
+            node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
+            node_gat_feat = self.bn_node_1(node_gat_feat).reshape(batch_size, n_node, -1)
+            edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
+            edge_gat_feat = self.bn_edge_1(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
+            # except:
+            #     node_gat_feat = node_gat_feat
+            #     edge_gat_feat = edge_gat_feat
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             # print('node_gat_feat', node_gat_feat.shape)
             # print('edge_gat_feat', edge_gat_feat.shape)
             node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
-            try:
-                node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
-                node_gat_feat = self.bn_node_2(node_gat_feat).reshape(batch_size, n_node, -1)
-                edge_gat_feat = edge_gat_feat.reshape(batch_size*n_node*n_node, -1)
-                edge_gat_feat = self.bn_edge_2(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
-            except:
-                node_gat_feat = node_gat_feat
-                edge_gat_feat = edge_gat_feat
+            # try:
+            node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
+            node_gat_feat = self.bn_node_2(node_gat_feat).reshape(batch_size, n_node, -1)
+            edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
+            edge_gat_feat = self.bn_edge_2(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
+            # except:
+            #     node_gat_feat = node_gat_feat
+            #     edge_gat_feat = edge_gat_feat
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             

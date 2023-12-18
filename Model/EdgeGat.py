@@ -124,10 +124,10 @@ class Readout(pl.LightningModule):
     def forward(self, x):
         x = x.reshape(-1, x.shape[-1])
         x = self.linear(x)
-        try:
-            x = self.batch_norm(x)
-        except:
-            pass
+        # try:
+        x = self.batch_norm(x)
+        # except:
+        #     pass
         # x = self.batch_norm(x)
         x = self.softmax(x)
         return x
