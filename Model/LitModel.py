@@ -183,7 +183,6 @@ class LitModel(pl.LightningModule):
             self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            print(edges_label)
             try:
                 loss_edge = self.loss_edge(edge_hat, edges_label)
                 acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
