@@ -137,7 +137,7 @@ class LitModel(pl.LightningModule):
             return loss_edge
         elif self.mode == 'train':
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
-            node_hat, edge_hat = self.model.sub_graph_pooling(node_hat, edge_hat)
+            # node_hat, edge_hat = self.model.sub_graph_pooling(node_hat, edge_hat)
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
@@ -185,7 +185,7 @@ class LitModel(pl.LightningModule):
             # print('node_hat', node_hat.shape)
             # print('edge_hat', edge_hat.shape)
 
-            node_hat, edge_hat = self.model.sub_graph_pooling(node_hat, edge_hat)
+            # node_hat, edge_hat = self.model.sub_graph_pooling(node_hat, edge_hat)
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             try:
