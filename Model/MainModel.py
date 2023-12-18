@@ -35,14 +35,17 @@ class MainModel(pl.LightningModule):
 
         self.softmax1 = torch.nn.Softmax(dim=1)
         self.softmax2 = torch.nn.Softmax(dim=2)
-        self.bn_node_1 = torch.nn.BatchNorm1d(node_gat_hidden_size)
-        self.bn_node_2 = torch.nn.BatchNorm1d(node_gat_output_size)
+        # self.bn_node_1 = torch.nn.BatchNorm1d(node_gat_hidden_size)
+        # self.bn_node_2 = torch.nn.BatchNorm1d(node_gat_output_size)
         # self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
         # self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
         # self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
+        self.bn_node_1 = torch.nn.BatchNorm2d(node_gat_hidden_size)
+        self.bn_node_2 = torch.nn.BatchNorm2d(node_gat_output_size)
         self.bn_edge_0 = torch.nn.BatchNorm2d(edge_gat_input_size)
         self.bn_edge_1 = torch.nn.BatchNorm2d(edge_gat_hidden_size)
         self.bn_edge_2 = torch.nn.BatchNorm2d(edge_gat_output_size)
+
         self.activation = torch.nn.LeakyReLU()
 
         if self.mode == 'pre_train_node' or self.mode == 'pre_train_edge':
@@ -90,7 +93,7 @@ class MainModel(pl.LightningModule):
             edge_emb_feat = self.activation(edge_emb_feat)
             node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
             # try:
-            node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
+            node_gat_feat = node_gat_feat.reshape(batch_size, -1, n_node, 1)
             node_gat_feat = self.bn_node_1(node_gat_feat).reshape(batch_size, n_node, -1)
             edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
             edge_gat_feat = self.bn_edge_1(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
@@ -103,7 +106,7 @@ class MainModel(pl.LightningModule):
             # print('edge_gat_feat', edge_gat_feat.shape)
             node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
             # try:
-            node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
+            node_gat_feat = node_gat_feat.reshape(batch_size,-1, n_node, 1)
             node_gat_feat = self.bn_node_2(node_gat_feat).reshape(batch_size, n_node, -1)
             edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
             edge_gat_feat = self.bn_edge_2(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
@@ -117,11 +120,13 @@ class MainModel(pl.LightningModule):
             edge_t = edge_gat_feat.transpose(1, 2)
             edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
 
-            edge_readout = self.readout_edge(edge_feat_concat.reshape(batch_size, n_node*n_node, -1))
+            # edge_feat_concat = edge_feat_concat.reshape(batch_size, n_node, n_node, -1)
+            # node_gat_feat = node_gat_feat.reshape(batch_size, n_node, 1, -1)
+            edge_readout = self.readout_edge(edge_feat_concat)
             node_readout = self.readout_node(node_gat_feat)
 
-            cc_graph = torch.argmax(edge_readout, dim=-1).reshape(batch_size, n_node, n_node)
-            cc_graph = torch.where(cc_graph == 1, 1, 0)
+            # cc_graph = torch.argmax(edge_readout, dim=-1).reshape(batch_size, n_node, n_node)
+            # cc_graph = torch.where(cc_graph == 1, 1, 0)
             # node_readout, edge_readout = self.sub_graph_pooling(node_gat_feat.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
             # print('node_readout', node_readout.shape)
             # print('edge_readout', edge_readout.shape)

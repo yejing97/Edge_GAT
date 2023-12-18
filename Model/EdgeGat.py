@@ -118,17 +118,17 @@ class Readout(pl.LightningModule):
     def __init__(self, in_features: int, class_nb: int) -> None:
         super().__init__()
         self.linear = nn.Linear(in_features, class_nb)
-        self.batch_norm = nn.BatchNorm1d(class_nb)
+        self.batch_norm = nn.BatchNorm2d(class_nb)
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self, x):
-        x = x.reshape(-1, x.shape[-1])
+        # x = x.reshape(-1, x.shape[-1])
         x = self.linear(x)
         # try:
-        x = self.batch_norm(x)
+        # x = self.batch_norm(x)
         # except:
         #     pass
-        # x = self.batch_norm(x)
+        # x = self.batch_norm(x.permute(0, 3, 1, 2))
         x = self.softmax(x)
         return x
     
