@@ -40,6 +40,7 @@ class MainModel(pl.LightningModule):
         # self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
         # self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
         # self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
+        self.bn_node_0 = torch.nn.BatchNorm1d(node_gat_input_size)
         self.bn_node_1 = torch.nn.BatchNorm2d(node_gat_hidden_size)
         self.bn_node_2 = torch.nn.BatchNorm2d(node_gat_output_size)
         self.bn_edge_0 = torch.nn.BatchNorm2d(edge_gat_input_size)
@@ -82,7 +83,8 @@ class MainModel(pl.LightningModule):
         elif self.mode == 'pre_train_edge':
             return self.edge_emb(node_in_features.squeeze(0))
         elif self.mode == 'train':
-            node_emb_feat = self.node_emb(node_in_features.reshape(batch_size * n_node , node_emb_nb,-1)).reshape(batch_size, n_node, -1)
+            node_emb_feat = self.node_emb(node_in_features.reshape(batch_size * n_node , node_emb_nb , -1)).reshape(batch_size * n_node, -1)
+            node_emb_feat = self.bn_node_0(node_emb_feat).reshape(batch_size, n_node, -1)
             edge_emb_feat = self.edge_emb(edge_in_features)
             # print(edge_emb_feat.shape)
             # try:
