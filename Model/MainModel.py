@@ -115,19 +115,19 @@ class MainModel(pl.LightningModule):
             edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
 
             edge_readout = self.readout_edge(edge_feat_concat.reshape(batch_size, n_node*n_node, -1))
-            # node_readout = self.readout_node(node_gat_feat)
+            node_readout = self.readout_node(node_gat_feat)
 
             cc_graph = torch.argmax(edge_readout, dim=-1).reshape(batch_size, n_node, n_node)
             cc_graph = torch.where(cc_graph == 1, 1, 0)
-            node_readout, edge_readout = self.sub_graph_pooling(node_gat_feat.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
+            # node_readout, edge_readout = self.sub_graph_pooling(node_gat_feat.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
             # print('node_readout', node_readout.shape)
             # print('edge_readout', edge_readout.shape)
-            node_readout = self.readout_node(node_readout)
+            # node_readout = self.readout_node(node_readout)
             # edge_readout = self.readout_edge(edge_readout)
 
 
 
-        return node_readout, edge_readout
+        return node_readout.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1)
     def unzip_batch(self, strokes_emb, edges_emb, los):
         # strokes_emb, edges_emb, los, strokes_label, edges_label = batch
         # strokes_emb = strokes_emb.squeeze(0)
@@ -173,8 +173,12 @@ class MainModel(pl.LightningModule):
             batch_mask.append(mask)
         return batch_mask
 
-    def sub_graph_pooling(self, node_feat, edge_feat, am):
-        batch_mask = self.connected_components_mask(am)
+    def sub_graph_pooling(self, node_feat, edge_feat):
+        batch_size = node_feat.shape[0]
+        n_node = node_feat.shape[1]
+        cc_graph = torch.argmax(edge_feat, dim=-1).reshape(batch_size, n_node, n_node)
+        cc_graph = torch.where(cc_graph == 1, 1, 0)
+        batch_mask = self.connected_components_mask(cc_graph)
         batch_node_out = torch.zeros_like(node_feat).to(self.d)
         batch_edge_out = torch.zeros_like(edge_feat).to(self.d)
         for i in range(len(batch_mask)):

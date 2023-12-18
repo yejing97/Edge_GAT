@@ -181,6 +181,10 @@ class LitModel(pl.LightningModule):
         elif self.mode == 'train':
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
+            # print('node_hat', node_hat.shape)
+            # print('edge_hat', edge_hat.shape)
+
+            node_hat, edge_hat = self.model.sub_graph_pooling(node_hat, edge_hat)
             node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             try:
