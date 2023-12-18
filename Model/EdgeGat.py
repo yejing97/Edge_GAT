@@ -57,22 +57,23 @@ class EdgeGraphAttention(pl.LightningModule):
         # self.bn_lb = nn.BatchNorm1d(self.n_hidden_edge * n_heads)
 
     def forward(self, h: torch.Tensor, b: torch.Tensor, adj_mat: torch.Tensor):
-        n_batch = h.shape[0]
-        n_nodes = h.shape[1]
-
-        g_l = self.linear_l(h).view(n_batch, n_nodes, self.n_heads, self.n_hidden_node)
+        # n_batch = h.shape[0]
+        n_nodes = h.shape[0]
+        h = h.reshape(n_nodes, -1)
+        b = b.reshape(n_nodes, n_nodes, -1)
+        g_l = self.linear_l(h).view(n_nodes, self.n_heads, self.n_hidden_node)
         # g_l = self.bn_ll(g_l).view(n_nodes, self.n_heads, self.n_hidden_node)
-        g_r = self.linear_r(h).view(n_batch, n_nodes, self.n_heads, self.n_hidden_node)
+        g_r = self.linear_r(h).view(n_nodes, self.n_heads, self.n_hidden_node)
         # g_r = self.bn_lr(g_r).view(n_nodes, self.n_heads, self.n_hidden_node)
 
-        g_b = self.linear_b(b).view(n_batch, n_nodes*n_nodes, self.n_heads,self.n_hidden_edge)
+        g_b = self.linear_b(b).view(n_nodes * n_nodes, self.n_heads,self.n_hidden_edge)
         # g_b = self.bn_lb(g_b).view(n_nodes*n_nodes, self.n_heads, self.n_hidden_edge)
-        g_l_repeat = g_l.repeat(1,n_nodes, 1, 1)
-        g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=1)
+        g_l_repeat = g_l.repeat(n_nodes, 1, 1)
+        g_r_repeat_interleave = g_r.repeat_interleave(n_nodes, dim=0)
+
         g_concat = torch.cat([g_l_repeat, g_r_repeat_interleave, g_b], dim=-1)
 
-        g_concat = g_concat.view(n_batch, n_nodes, n_nodes, self.n_heads, self.n_hidden_mix)
-
+        g_concat = g_concat.view(n_nodes, n_nodes, self.n_heads, self.n_hidden_mix)
         # g_sum = g_l_repeat + g_r_repeat_interleave + g_b
         # g_sum = g_l_repeat + g_r_repeat_interleave
         
@@ -94,22 +95,21 @@ class EdgeGraphAttention(pl.LightningModule):
         assert adj_mat_self.shape[3] == 1 or adj_mat_self.shape[3] == self.n_heads
         # print(adj_mat_self.shape)
         # print(e.shape)
-        e = e.masked_fill(adj_mat_self == 0, float(-1e9))
+        e = e.masked_fill(adj_mat == 0, float(-1e9))
 
 
         a = self.softmax(e)
-
         # a = self.dropout(a)
 
 
         #h_{q} = \sum_{i=0}^{N}( \alpha  ^{i,j} \cdot W_{h}\cdot \sum_{j\in \mathcal{N} _{i}} h_{q-1}^{j})
-        new_node = torch.einsum('bijh,bjhf->bihf', a, g_r)
+        new_node = torch.einsum('ijh,jhf->ihf', a, g_r)
         # b_{q}= \sum_{i,j=0}^{N}( \alpha  ^{i,j} \cdot W_{b}\cdot b_{q-1}^{i,j})
-        new_edge = torch.einsum('bijh,bijhf->bijhf', a, g_b.view(n_batch, n_nodes, n_nodes, self.n_heads, self.n_hidden_edge))
+        new_edge = torch.einsum('ijh,ijhf->ijhf', a, g_b.view(n_nodes, n_nodes, self.n_heads, self.n_hidden_edge))
         # torch.set_printoptions(profile="full")
         # print(new_edge)
         # if self.is_concat:
-        return new_node.reshape(n_batch, n_nodes, self.n_heads * self.n_hidden_node), new_edge.reshape(n_batch, n_nodes * n_nodes, self.n_heads * self.n_hidden_edge)
+        return new_node.reshape(n_nodes, self.n_heads * self.n_hidden_node), new_edge.reshape(n_nodes * n_nodes, self.n_heads * self.n_hidden_edge)
         # else:
         #     return new_node.reshape(n_nodes, self.n_heads * self.n_hidden).mean(dim=1), new_edge.reshape(n_nodes, n_nodes, self.n_heads * self.n_hidden).mean(dim=2)
 

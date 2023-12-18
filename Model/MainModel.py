@@ -35,17 +35,17 @@ class MainModel(pl.LightningModule):
 
         self.softmax1 = torch.nn.Softmax(dim=1)
         self.softmax2 = torch.nn.Softmax(dim=2)
-        # self.bn_node_1 = torch.nn.BatchNorm1d(node_gat_hidden_size)
-        # self.bn_node_2 = torch.nn.BatchNorm1d(node_gat_output_size)
-        # self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
-        # self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
-        # self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
-        self.bn_node_0 = torch.nn.BatchNorm1d(node_gat_input_size)
-        self.bn_node_1 = torch.nn.BatchNorm2d(node_gat_hidden_size)
-        self.bn_node_2 = torch.nn.BatchNorm2d(node_gat_output_size)
-        self.bn_edge_0 = torch.nn.BatchNorm2d(edge_gat_input_size)
-        self.bn_edge_1 = torch.nn.BatchNorm2d(edge_gat_hidden_size)
-        self.bn_edge_2 = torch.nn.BatchNorm2d(edge_gat_output_size)
+        self.bn_node_1 = torch.nn.BatchNorm1d(node_gat_hidden_size)
+        self.bn_node_2 = torch.nn.BatchNorm1d(node_gat_output_size)
+        self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
+        self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
+        self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
+        # self.bn_node_0 = torch.nn.BatchNorm1d(node_gat_input_size)
+        # self.bn_node_1 = torch.nn.BatchNorm2d(node_gat_hidden_size)
+        # self.bn_node_2 = torch.nn.BatchNorm2d(node_gat_output_size)
+        # self.bn_edge_0 = torch.nn.BatchNorm2d(edge_gat_input_size)
+        # self.bn_edge_1 = torch.nn.BatchNorm2d(edge_gat_hidden_size)
+        # self.bn_edge_2 = torch.nn.BatchNorm2d(edge_gat_output_size)
 
         self.activation = torch.nn.LeakyReLU()
 
@@ -75,60 +75,62 @@ class MainModel(pl.LightningModule):
                     torch.nn.init.kaiming_uniform_(param)
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
-        batch_size = node_in_features.shape[0]
-        n_node = node_in_features.shape[1]
-        node_emb_nb = node_in_features.shape[2]
+        # batch_size = node_in_features.shape[0]
+        n_node = node_in_features.shape[0]
+        node_emb_nb = node_in_features.shape[1]
         # unzip_node, unzip_edge, unzip_adj_mat = self.unzip_batch(node_in_features, edge_in_features, adj_mat)
         if self.mode == 'pre_train_node':
             return self.node_emb(node_in_features.squeeze(0))
         elif self.mode == 'pre_train_edge':
             return self.edge_emb(node_in_features.squeeze(0))
         elif self.mode == 'train':
-            node_emb_feat = self.node_emb(node_in_features.reshape(batch_size * n_node , node_emb_nb , -1)).reshape(batch_size * n_node, -1)
-            node_emb_feat = self.bn_node_0(node_emb_feat).reshape(batch_size, n_node, -1)
+            node_emb_feat = self.node_emb(node_in_features.reshape( n_node , node_emb_nb , -1)).reshape( n_node, -1)
+            # node_emb_feat = self.bn_node_0(node_emb_feat).reshape(n_node, -1)
             edge_emb_feat = self.edge_emb(edge_in_features)
-            # print(edge_emb_feat.shape)
             # try:
-            edge_emb_feat = edge_emb_feat.reshape(batch_size, -1, n_node, n_node)
-            edge_emb_feat = self.bn_edge_0(edge_emb_feat).reshape(batch_size, n_node, n_node, -1)
+            # edge_emb_feat = edge_emb_feat.reshape(-1, n_node, n_node)
+            edge_emb_feat = self.bn_edge_0(edge_emb_feat.reshape(n_node*n_node, -1))
+
 
             edge_emb_feat = self.activation(edge_emb_feat)
             node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
-            node_gat_feat = node_gat_feat.reshape(batch_size, -1, n_node, 1)
-            node_gat_feat = self.bn_node_1(node_gat_feat).reshape(batch_size, n_node, -1)
-            edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
-            edge_gat_feat = self.bn_edge_1(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
+            # node_gat_feat = node_gat_feat.reshape(batch_size, -1, n_node, 1)
+            node_gat_feat = self.bn_node_1(node_gat_feat)
+            # edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
+            edge_gat_feat = self.bn_edge_1(edge_gat_feat).reshape(n_node, n_node, -1)
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
-            node_gat_feat = node_gat_feat.reshape(batch_size,-1, n_node, 1)
-            node_gat_feat = self.bn_node_2(node_gat_feat).reshape(batch_size, n_node, -1)
-            edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
-            edge_gat_feat = self.bn_edge_2(edge_gat_feat).reshape(batch_size, n_node, n_node, -1)
+            # node_gat_feat = node_gat_feat.reshape(batch_size,-1, n_node, 1)
+            node_gat_feat = self.bn_node_2(node_gat_feat).reshape(n_node, -1)
+            # edge_gat_feat = edge_gat_feat.reshape(batch_size, -1, n_node, n_node)
+            edge_gat_feat = self.bn_edge_2(edge_gat_feat).reshape(n_node, n_node, -1)
             node_gat_feat = self.activation(node_gat_feat)
             edge_gat_feat = self.activation(edge_gat_feat)
             
-            edge_gat_feat = edge_gat_feat.reshape(batch_size, n_node, n_node, -1)
-            edge_t = edge_gat_feat.transpose(1, 2)
+            edge_gat_feat = edge_gat_feat.reshape(n_node, n_node, -1)
+            edge_t = edge_gat_feat.transpose(0, 1)
             edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
 
-            edge_feat_concat = edge_feat_concat.reshape(batch_size*n_node*n_node, -1)
-            node_gat_feat = node_gat_feat.reshape(batch_size, n_node, -1)
+            edge_feat_concat = edge_feat_concat.reshape(n_node*n_node, -1)
+            node_gat_feat = node_gat_feat.reshape(n_node, -1)
             # edge_readout = self.readout_edge(edge_feat_concat)
-            edge_biclf = self.bi_clf(edge_feat_concat)
-            edge_biclf = edge_biclf.reshape(batch_size, n_node, n_node, -1)
-            edge_feat_concat = edge_feat_concat.reshape(batch_size, n_node, n_node, -1)
+            # edge_biclf = self.bi_clf(edge_feat_concat)
+            # edge_biclf = edge_biclf.reshape(n_node, n_node, -1)
+            # edge_feat_concat = edge_feat_concat.reshape(n_node, n_node, -1)
             # node_readout = self.readout_node(node_gat_feat)
 
-            node_pooled_feat, edge_pooled_feat = self.sub_graph_pooling(node_gat_feat, edge_feat_concat, edge_biclf)
+            # node_pooled_feat, edge_pooled_feat = self.sub_graph_pooling(node_gat_feat, edge_feat_concat, edge_biclf)
             # print('node_readout', node_readout.shape)
             # print('edge_readout', edge_readout.shape)
-            node_readout = self.readout_node(node_pooled_feat.reshape(batch_size*n_node, -1))
-            edge_readout = self.readout_edge(edge_pooled_feat.reshape(batch_size*n_node*n_node, -1))
+            # node_readout = self.readout_node(node_pooled_feat.reshape(batch_size*n_node, -1))
+            # edge_readout = self.readout_edge(edge_pooled_feat.reshape(batch_size*n_node*n_node, -1))
+            node_readout = self.readout_node(node_gat_feat)
+            edge_readout = self.readout_edge(edge_feat_concat)
 
 
 
-        return node_readout.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), edge_biclf.reshape(batch_size, n_node, n_node, -1)
+        return node_readout.reshape(n_node, -1), edge_readout.reshape(n_node, n_node, -1)
     def unzip_batch(self, strokes_emb, edges_emb, los):
         # strokes_emb, edges_emb, los, strokes_label, edges_label = batch
         # strokes_emb = strokes_emb.squeeze(0)
