@@ -121,7 +121,7 @@ class MainModel(pl.LightningModule):
             cc_graph = torch.where(cc_graph == 1, 1, 0)
             # print('node_gat_feat', node_gat_feat.shape)
             # print('node_readout', node_readout.shape)
-            node_readout, edge_readout = self.sub_graph_pooling(node_readout.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
+            # node_readout, edge_readout = self.sub_graph_pooling(node_readout.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
 
             # edge_readout = self.readout_edge(edge_feat_concat)
 
