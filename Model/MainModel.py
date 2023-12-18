@@ -120,8 +120,8 @@ class MainModel(pl.LightningModule):
             edge_t = edge_gat_feat.transpose(1, 2)
             edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
 
-            # edge_feat_concat = edge_feat_concat.reshape(batch_size, n_node, n_node, -1)
-            # node_gat_feat = node_gat_feat.reshape(batch_size, n_node, 1, -1)
+            edge_feat_concat = edge_feat_concat.reshape(batch_size*n_node*n_node, -1)
+            node_gat_feat = node_gat_feat.reshape(batch_size*n_node, -1)
             edge_readout = self.readout_edge(edge_feat_concat)
             node_readout = self.readout_node(node_gat_feat)
 
