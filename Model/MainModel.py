@@ -115,13 +115,15 @@ class MainModel(pl.LightningModule):
             edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
 
             edge_readout = self.readout_edge(edge_feat_concat.reshape(batch_size, n_node*n_node, -1))
-            node_readout = self.readout_node(node_gat_feat)
+            # node_readout = self.readout_node(node_gat_feat)
 
             cc_graph = torch.argmax(edge_readout, dim=-1).reshape(batch_size, n_node, n_node)
             cc_graph = torch.where(cc_graph == 1, 1, 0)
-            # print('node_gat_feat', node_gat_feat.shape)
+            node_readout, edge_readout = self.sub_graph_pooling(node_gat_feat.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
             # print('node_readout', node_readout.shape)
-            node_readout, edge_readout = self.sub_graph_pooling(node_readout.reshape(batch_size, n_node, -1), edge_readout.reshape(batch_size, n_node, n_node, -1), cc_graph)
+            # print('edge_readout', edge_readout.shape)
+            node_readout = self.readout_node(node_readout)
+            # edge_readout = self.readout_edge(edge_readout)
 
 
 
