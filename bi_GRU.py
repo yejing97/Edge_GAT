@@ -48,17 +48,21 @@ class Seg_LitModel(pl.LightningModule):
     def __init__(self) -> None:
         super().__init__()
         # self.embedding = torch.nn.Embedding(300, 128)
-        self.bi_gru = torch.nn.GRU(300, 32, 2, bidirectional=True)
+        self.bi_gru1 = torch.nn.GRU(300, 128, bidirectional=True)
+        self.bi_gru2 = torch.nn.GRU(256, 64, bidirectional=True)
+        self.bi_gru3 = torch.nn.GRU(128, 32, bidirectional=True)
         self.batch_norm = torch.nn.BatchNorm1d(64)
         self.conc = torch.nn.Linear(64, 2)
-        self.softmax = torch.nn.Softmax(dim=2)
+        # self.softmax = torch.nn.Softmax(dim=2)
         # binary cross entropy loss
         
         self.sigmoid = torch.nn.Sigmoid()
     
     def forward(self, x):
         # x = self.embedding(x)
-        x,_ = self.bi_gru(x.reshape(x.shape[0], x.shape[1], -1))
+        x,_ = self.bi_gru1(x.reshape(x.shape[0], x.shape[1], -1))
+        x,_ = self.bi_gru2(x)
+        x,_ = self.bi_gru3(x)
         # print(x.shape)
         x = self.batch_norm(x.permute(0, 2, 1)).permute(0, 2, 1)
         x = self.conc(x)
