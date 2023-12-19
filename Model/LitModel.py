@@ -138,7 +138,7 @@ class LitModel(pl.LightningModule):
         elif self.mode == 'train':
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
-            # node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
+            node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
             # print('edges_label', edges_label.shape)
@@ -146,7 +146,7 @@ class LitModel(pl.LightningModule):
             loss_edge = self.loss_edge(edge_hat, edges_label)
             # except:
             #     loss_edge = 0
-            strokes_label = strokes_label.reshape(-1)
+            # strokes_label = strokes_label.reshape(-1)
             loss_node = self.loss_node(node_hat, strokes_label)
             # loss_edge = self.loss_edge(edge_hat, edges_label)
             loss = self.lambda1*loss_node + self.lambda2 * loss_edge
@@ -188,7 +188,7 @@ class LitModel(pl.LightningModule):
         elif self.mode == 'train':
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
-            # node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
+            node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
 
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             try:
@@ -197,7 +197,7 @@ class LitModel(pl.LightningModule):
             except:
                 loss_edge = 0
                 acc_edge = 1
-            strokes_label = strokes_label.reshape(-1)
+            # strokes_label = strokes_label.reshape(-1)
             loss_node = self.loss_node(node_hat, strokes_label)
             loss = self.lambda1*loss_node + self.lambda2 * loss_edge
             self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
