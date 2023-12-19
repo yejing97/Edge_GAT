@@ -49,6 +49,7 @@ class Seg_LitModel(pl.LightningModule):
         super().__init__()
         # self.embedding = torch.nn.Embedding(300, 128)
         self.bi_gru = torch.nn.GRU(300, 32, 2, bidirectional=True)
+        self.batch_norm = torch.nn.BatchNorm1d(64)
         self.conc = torch.nn.Linear(64, 2)
         self.softmax = torch.nn.Softmax(dim=2)
         # binary cross entropy loss
@@ -58,6 +59,8 @@ class Seg_LitModel(pl.LightningModule):
     def forward(self, x):
         # x = self.embedding(x)
         x,_ = self.bi_gru(x.reshape(x.shape[0], x.shape[1], -1))
+        # print(x.shape)
+        x = self.batch_norm(x.permute(0, 2, 1)).permute(0, 2, 1)
         x = self.conc(x)
         x = self.sigmoid(x)
         # x = self.softmax(x)
@@ -65,16 +68,16 @@ class Seg_LitModel(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.forward(x.to('cuda'))
-        y_pred = y_hat[:, :, 0].to('cuda')
+        y_hat = self.forward(x.to('cpu'))
+        y_pred = y_hat[:, :, 0].to('cpu')
         loss = F.binary_cross_entropy(y_pred, y)
         self.log('train_loss', loss)
         return loss
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.forward(x.to('cuda'))
-        y_pred = y_hat[:, :, 0].to('cuda')
+        y_hat = self.forward(x.to('cpu'))
+        y_pred = y_hat[:, :, 0].to('cpu')
         loss = F.binary_cross_entropy(y_pred, y)
         # acc = accuracy_score(y.cpu().numpy(), y_pred.cpu().numpy())
         acc = accuracy_score(y.cpu().numpy(), y_hat.cpu().argmin(dim=2).numpy())
@@ -87,8 +90,9 @@ class Seg_LitModel(pl.LightningModule):
         return optimizer
 
 model = Seg_LitModel()
-dm = Seg_DataModule('/home/xie-y/data/Edge_GAT/S150_R10', 128, True, 0, True, 8)
+# dm = Seg_DataModule('/home/xie-y/data/Edge_GAT/S150_R10', 128, True, 0, True, 8)
+dm = Seg_DataModule('/home/e19b516g/yejing/data/data_for_graph/S150_R10', 128, True, 0, True, 8)
 logger = pl.loggers.TensorBoardLogger('gru_logs', name='seg')
 trainer = pl.Trainer(max_epochs=10, logger=logger, accelerator="auto", devices=1, reload_dataloaders_every_n_epochs=1)
-trainer.fit(model.to('cuda'), dm)
+trainer.fit(model.to('cpu'), dm)
     
