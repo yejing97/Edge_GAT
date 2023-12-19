@@ -112,7 +112,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
                 strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
                 edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
                 stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()
-                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long() + 1
             elif(start == 0 and node_nb > self.max_node):
                 padding_stroke = torch.zeros((self.max_node - end, self.node_emb_nb, 2))
                 padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
@@ -125,7 +125,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
                 padding_edge[start + self.pad:,start + self.pad:,:] = edges_emb
                 edges_emb = padding_edge
                 stroke_labels = torch.cat((padding_stroke_label, torch.from_numpy(data['stroke_labels'])[start:end].long()), dim=0)
-                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long() + 1
                 padding_edge_label[start + self.pad:,start + self.pad:] = edge_labels
                 edge_labels = padding_edge_label
                 # los = torch.from_numpy(data['los'])[start:end,start:end].long()
@@ -143,7 +143,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
                 padding_edge[:end - start,:end - start,:] = edges_emb
                 edges_emb = padding_edge
                 stroke_labels = torch.cat((torch.from_numpy(data['stroke_labels'])[start:end].long(), padding_stroke_label), dim=0)
-                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
+                edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long() + 1
                 padding_edge_label[:end - start,:end - start] = edge_labels
                 edge_labels = padding_edge_label
                 # los = torch.from_numpy(data['los'])[start:end,start:end].long()
