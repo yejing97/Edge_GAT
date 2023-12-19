@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config_name', type=str, default = 'S150_R10_14_re10')
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--results_path', type=str, default='val_results')
-parser.add_argument('--logs_path', type=str, default='logs')
+parser.add_argument('--logs_path', type=str, default='new_logs')
 
 args = parser.parse_args()
 args = vars(parser.parse_args())

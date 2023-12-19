@@ -107,7 +107,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         if end - start == self.max_node:
             strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
             edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
-            stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()
+            stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long() + 1
             edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
         elif(start == 0 and node_nb > self.max_node):
             padding_stroke = torch.zeros((self.max_node - end, self.node_emb_nb, 2))
@@ -120,7 +120,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             # edges_emb = self.normalize_gaussian_edge(edges_emb)
             padding_edge[start + self.pad:,start + self.pad:,:] = edges_emb
             edges_emb = padding_edge
-            stroke_labels = torch.cat((padding_stroke_label, torch.from_numpy(data['stroke_labels'])[start:end].long()), dim=0)
+            stroke_labels = torch.cat((padding_stroke_label, torch.from_numpy(data['stroke_labels'])[start:end].long() + 1), dim=0)
             edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
             padding_edge_label[start + self.pad:,start + self.pad:] = edge_labels
             edge_labels = padding_edge_label
@@ -138,7 +138,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             # edges_emb = self.normalize_gaussian(edges_emb)
             padding_edge[:end - start,:end - start,:] = edges_emb
             edges_emb = padding_edge
-            stroke_labels = torch.cat((torch.from_numpy(data['stroke_labels'])[start:end].long(), padding_stroke_label), dim=0)
+            stroke_labels = torch.cat((torch.from_numpy(data['stroke_labels'])[start:end].long() + 1, padding_stroke_label), dim=0)
             edge_labels = torch.from_numpy(data['edge_labels'])[start:end,start:end].long()
             padding_edge_label[:end - start,:end - start] = edge_labels
             edge_labels = padding_edge_label
