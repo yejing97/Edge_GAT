@@ -158,12 +158,18 @@ class LitModel(pl.LightningModule):
             return loss
     
     def validation_step(self, batch, batch_idx):
-        try:
-            strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
-        except:
-            print('error with batch ' + str(batch_idx))
-            print('stroke_emb', batch[0].shape)
-            return
+        # try:
+        #     strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
+        # except:
+        #     print('error with batch ' + str(batch_idx))
+        #     print('stroke_emb', batch[0].shape)
+        #     return
+        strokes_emb, edges_emb, los, strokes_label, edges_label = batch
+        strokes_emb = strokes_emb.to(self.d)
+        edges_emb = edges_emb.to(self.d)
+        los = los.to(self.d)
+        strokes_label = strokes_label.long().to(self.d)
+        edges_label = edges_label.long().to(self.d)
         if self.mode == 'pre_train_node':
             node_hat = self.model(strokes_emb, edges_emb, los)
             loss_node = self.loss_node(node_hat, strokes_label)
