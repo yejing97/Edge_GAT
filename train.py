@@ -68,6 +68,6 @@ if __name__ == '__main__':
         results_path = val_results_path
     )
 
-    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto", devices=0, logger=logger,reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'])
+    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="gpu", devices=1, logger=logger,reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'])
     # trainer.logger.log_hyperparams(hyperparameters)
     trainer.fit(model.to(device), dm)
