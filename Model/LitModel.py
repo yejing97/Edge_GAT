@@ -103,12 +103,12 @@ class LitModel(pl.LightningModule):
         return node_emb, node_label
     
     def training_step(self, batch, batch_idx):
-        try:
-            strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
-        except:
-            print('error with batch ' + str(batch_idx))
-            print('stroke_emb', batch[0].shape)
-            return
+        # try:
+        strokes_emb, edges_emb, los, strokes_label, edges_label = self.load_batch(batch)
+        # except:
+        #     print('error with batch ' + str(batch_idx))
+        #     print('stroke_emb', batch[0].shape)
+        #     return
         if self.mode == 'pre_train_node':
             node_hat = self.model(strokes_emb, edges_emb, los)
             loss_node = self.loss_node(node_hat, strokes_label)
