@@ -33,7 +33,7 @@ def objective(trial: optuna.trial.Trial):
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [10])
-    total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256])
+    total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256, 512])
     # batch_size = trial.suggest_categorical('batch_size', [16])
     max_node = trial.suggest_categorical('max_node', [4,8,12,16])
     # max_node = trial.suggest_categorical('max_node', 16)
@@ -52,15 +52,15 @@ def objective(trial: optuna.trial.Trial):
     # dropout = trial.suggest_categorical('dropout', [0.3])
     # gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
     gat_n_heads = 8
-    node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [64, 128, 256])
-    edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [64, 128, 256])
-    node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [64, 128, 256])
-    edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [64, 128, 256])
-    node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [64, 128, 256])
-    edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [64, 128, 256])
+    node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [32, 64, 128, 256, 384])
+    edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [32, 64, 128, 256, 384])
+    node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [32, 64, 128, 256, 384])
+    edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [32, 64, 128, 256, 384])
+    node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [32, 64, 128, 256, 384])
+    edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [32, 64, 128, 256, 384])
 
     reload_dataloaders_every_n_epochs = args.reload_dataloaders_every_n_epochs
-
+    loss_gamma = trial.suggest_float('loss_gamma', 1, 3, step=0.5)
     # node_gat_input_size = 128
     # edge_gat_input_size = 64
     # node_gat_hidden_size = 256
@@ -88,8 +88,8 @@ def objective(trial: optuna.trial.Trial):
         edge_gat_hidden_size=edge_gat_hidden_size,
         node_gat_output_size=node_gat_output_size,
         edge_gat_output_size=edge_gat_output_size,
-        loss_gamma=2,
-        patience=10,
+        loss_gamma=loss_gamma,
+        patience=5,
         min_delta=1e-4,
         shuffle=True,
         num_workers=0,
