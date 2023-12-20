@@ -67,7 +67,17 @@ if __name__ == '__main__':
         mode = args['mode'],
         results_path = val_results_path
     )
+    num_available_gpus = torch.cuda.device_count()
 
-    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto",auto_select_gpus=True, devices= 1,logger=logger,reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'])
+    for device_idx in range(num_available_gpus):
+        print(torch.cuda.get_device_name(device_idx))
+        try:
+            torch.cuda.set_device(device_idx)
+            # trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto",auto_select_gpus=True, gpus= 1,logger=logger,reload_dataloaders_every_n_epochs=cfg
+            # ['reload_dataloaders_every_n_epochs'])
+            trainer = pl.Trainer(max_epochs = cfg['epoch'], gpus= 1,logger=logger)
+            trainer.fit(model.to(device), dm)
+        except RuntimeError as e:
+            print(f"GPU {device_idx} is busy. Trying next GPU.")
     # trainer.logger.log_hyperparams(hyperparameters)
-    trainer.fit(model.to(device), dm)
+    # trainer.fit(model.to(device), dm)
