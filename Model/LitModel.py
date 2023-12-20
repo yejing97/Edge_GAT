@@ -73,7 +73,7 @@ class LitModel(pl.LightningModule):
         strokes_label = strokes_label.squeeze(0).long().reshape(-1)
         edges_label = edges_label.squeeze(0).long()
         # los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
-        los = los + torch.eye(los.shape[1], los.shape[2]).repeat(los.shape[0], 1, 1).to(self.d)
+        los = los.to(self.d) + torch.eye(los.shape[1], los.shape[2]).repeat(los.shape[0], 1, 1).to(self.d)
         new_los = torch.zeros((los.shape[0]*los.shape[1], los.shape[0]*los.shape[2])).to(self.d)
         new_edges_label = torch.zeros((edges_label.shape[0]*edges_label.shape[1], edges_label.shape[0]*edges_label.shape[2])).long().to(self.d)
         new_edges_emb = torch.zeros((edges_emb.shape[0]*edges_emb.shape[1], edges_emb.shape[0]*edges_emb.shape[2], edges_emb.shape[3])).to(self.d)
