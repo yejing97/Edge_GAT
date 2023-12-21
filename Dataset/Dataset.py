@@ -4,14 +4,14 @@ import numpy as np
 import math
 
 class CROHMEDataset(torch.utils.data.Dataset):
-    def __init__(self, data_type, root_path, batch_size, max_node, random_padding_size, am_type, node_norm):
+    def __init__(self, data_type, root_path, batch_size, max_node, random_padding_size, am_type, node_type):
         super().__init__()
         print('random_padding_size: ', data_type, random_padding_size)
         self.max_node = max_node
         self.am_type = am_type
-        self.node_norm = node_norm
         self.pad = random_padding_size
         self.data_type = data_type
+        self.node_type = node_type
         self.data_path = os.path.join(root_path, self.data_type)
         self.batch_size = batch_size
         # self.data_list = self.make_data_list(self.max_node)
@@ -79,7 +79,10 @@ class CROHMEDataset(torch.utils.data.Dataset):
     
     def load_data(self, path, name):
         los = np.load(os.path.join(path, 'los' ,name))
-        strokes_emb = np.load(os.path.join(path, 'strokes_emb' ,name))
+        if self.node_type == 'no_norm':
+            strokes_emb = np.load(os.path.join(path, 'sym_emb_no_norm' ,name))
+        else:
+            strokes_emb = np.load(os.path.join(path, 'strokes_emb' ,name))
         edges_emb = np.load(os.path.join(path, 'edges_emb' ,name))
         stroke_labels = np.load(os.path.join(path, 'stroke_labels' ,name))
         edge_labels = np.load(os.path.join(path, 'edge_labels' ,name))
@@ -148,8 +151,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         else:
             print('error' + name)
 
-        if self.node_norm == True:
-            strokes_emb = self.normalize_gaussian_node(strokes_emb)
+        strokes_emb = self.normalize_gaussian_node(strokes_emb)
         edges_emb = self.normalize_gaussian_edge(edges_emb)
         
         return strokes_emb, edges_emb, los, stroke_labels, edge_labels

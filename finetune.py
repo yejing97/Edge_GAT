@@ -16,7 +16,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--edge_class', type=int, default=14)
 parser.add_argument('--am_type', type=str, default='los')
-parser.add_argument('--node_norm', type=bool, default=True)
+# parser.add_argument('--node_norm', type=bool, default=True)
 parser.add_argument('--edge_feat', type=str, default='R10')
 parser.add_argument('--gpu_id', type=int, default = 1)
 parser.add_argument('--reload_dataloaders_every_n_epochs', type=int, default = 5)
@@ -33,6 +33,7 @@ def objective(trial: optuna.trial.Trial):
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 151, step=50)
     node_class_nb = 102
     edge_class_nb = args.edge_class
+    node_type = trial.suggest_categorical('node_type', ['norm', 'no_norm'])
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [40])
     total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256, 512])
@@ -41,10 +42,10 @@ def objective(trial: optuna.trial.Trial):
     lr = trial.suggest_float('lr', 1e-5, 1e-3, log=True)
     lambda1 = trial.suggest_float('lambda1', 0.4, 0.8, step=0.1)
     lambda2 = 1 - lambda1
-    gat_layer = trial.suggest_categorical('gat_layer', [2, 3, 4, 5])
+    gat_layer = trial.suggest_categorical('gat_layer', [2, 3, 4])
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     edge_emb_layer = trial.suggest_categorical('edge_emb_layer', [2, 3])
-    readout_layer = trial.suggest_categorical('readout_layer', [2, 3, 4])
+    readout_layer = trial.suggest_categorical('readout_layer', [2, 3])
     node_gat_parm = []
     edge_gat_parm = []
     gat_heads_parm = []
@@ -111,7 +112,7 @@ def objective(trial: optuna.trial.Trial):
         edge_class_nb=args.edge_class,
         epoch = epoch,
         am_type = args.am_type,
-        node_norm = args.node_norm,
+        node_type = node_type,
         reload_dataloaders_every_n_epochs = reload_dataloaders_every_n_epochs
         )
 
@@ -136,8 +137,8 @@ def objective(trial: optuna.trial.Trial):
         yaml_path = os.path.join(root_path, 'config', npz_name + '_' + exp_name + '.yaml')
         make_yaml(hyperparameters, yaml_path)
         # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
-        hyp_name = args.am_type + '_nodenorm_' + str(args.node_norm) + '_edgeclass_' + str(args.edge_class)
-        logger_path = os.path.join(root_path,'finetunning/finetunning_best', hyp_name, npz_name)
+        hyp_name = args.am_type + '_nodenorm_' + str(node_type) + '_edgeclass_' + str(args.edge_class)
+        logger_path = os.path.join(root_path,'finetunning/multi_layer', hyp_name, npz_name)
         logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
         val_results_path = os.path.join(results_path, npz_name, exp_name)
         if not os.path.exists(val_results_path):
