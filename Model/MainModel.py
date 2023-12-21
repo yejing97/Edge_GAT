@@ -63,18 +63,25 @@ class Multi_Readout(pl.LightningModule):
                  dropout: float):
         super().__init__()
         self.readout_parm = readout_parm
-        for i in range(len(readout_parm) - 1):
-            setattr(self, 'readout' + str(i), Readout(readout_parm[i], readout_parm[i+1]))
+        for i in range(len(readout_parm) - 2):
+            setattr(self, 'readout' + str(i), torch.nn.Linear(readout_parm[i], readout_parm[i+1]))
             setattr(self, 'bn' + str(i), torch.nn.BatchNorm1d(readout_parm[i+1]))
             setattr(self, 'activation' + str(i), torch.nn.LeakyReLU())
             setattr(self, 'dropout' + str(i), torch.nn.Dropout(dropout))
+        setattr(self, 'readout' + str(len(readout_parm) - 2), torch.nn.Linear(readout_parm[len(readout_parm) - 2], readout_parm[len(readout_parm) - 1]))
+        setattr(self, 'bn' + str(len(readout_parm) - 2), torch.nn.BatchNorm1d(readout_parm[len(readout_parm) - 1]))
+        setattr(self, 'softmax', torch.nn.Softmax(dim=-1))
     
     def forward(self, in_features):
-        for i in range(len(self.readout_parm) - 1):
+        for i in range(len(self.readout_parm) - 2):
+
             in_features = getattr(self, 'readout' + str(i))(in_features)
             in_features = getattr(self, 'bn' + str(i))(in_features)
             in_features = getattr(self, 'activation' + str(i))(in_features)
             in_features = getattr(self, 'dropout' + str(i))(in_features)
+        in_features = getattr(self, 'readout' + str(len(self.readout_parm) - 2))(in_features)
+        in_features = getattr(self, 'bn' + str(len(self.readout_parm) - 2))(in_features)
+        in_features = self.softmax(in_features)
         return in_features
     
 
@@ -87,6 +94,8 @@ class MainModel(pl.LightningModule):
             edge_gat_parm: list,
             node_gat_parm: list,
             gat_heads_parm: list,
+            node_readout: list,
+            edge_readout: list,
             # node_gat_input_size: int,
             # edge_gat_input_size: int,
             # node_gat_hidden_size: int,
@@ -123,8 +132,8 @@ class MainModel(pl.LightningModule):
 
         self.edge_gat = Multi_GAT(node_gat_parm, edge_gat_parm, gat_heads_parm, dropout)
 
-        self.readout_node = Multi_Readout(node_gat_parm, dropout)
-        self.readout_edge = Multi_Readout(edge_gat_parm, dropout)
+        self.readout_node = Multi_Readout(node_readout, dropout)
+        self.readout_edge = Multi_Readout(edge_readout, dropout)
 
 
             # self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size, edge_gat_hidden_size, gat_n_heads, dropout = dropout)
@@ -162,7 +171,7 @@ class MainModel(pl.LightningModule):
         # print('edge_gat_feat', edge_gat_feat.shape)
         edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
         edge_gat_feat_t = edge_gat_feat.transpose(0, 1)
-        edge_gat_feat_concat = torch.cat([edge_gat_feat, edge_gat_feat_t], dim=-1)
+        edge_gat_feat_concat = torch.cat([edge_gat_feat, edge_gat_feat_t], dim=-1).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], edge_gat_feat.shape[-1] * 2)
 
         node_readout = self.readout_node(node_gat_feat)
         edge_readout = self.readout_edge(edge_gat_feat_concat)
