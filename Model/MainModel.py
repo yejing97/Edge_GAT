@@ -164,7 +164,6 @@ class MainModel(pl.LightningModule):
         # elif self.mode == 'pre_train_edge':
         #     return self.edge_emb(edge_in_features.squeeze(0))
         # elif self.mode == 'train':
-        print('node_in_features', node_in_features.shape)
         node_emb_feat = self.node_emb(node_in_features.squeeze(0))
         edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
         node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
