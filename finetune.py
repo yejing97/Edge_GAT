@@ -50,14 +50,14 @@ def objective(trial: optuna.trial.Trial):
         lambda2 = 1 - lambda1
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     # dropout = trial.suggest_categorical('dropout', [0.3])
-    # gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8])
-    gat_n_heads = 8
-    node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [32, 64, 128, 256, 384])
-    edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [32, 64, 128, 256, 384])
-    node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [32, 64, 128, 256, 384])
-    edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [32, 64, 128, 256, 384])
-    node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [32, 64, 128, 256, 384])
-    edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [32, 64, 128, 256, 384])
+    gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8, 16])
+    # gat_n_heads = 8
+    node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [128, 256, 384, 512])
+    edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [128, 256, 384, 512])
+    node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [128, 256, 384, 512])
+    edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [128, 256, 384, 512])
+    node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [128, 256, 384, 512])
+    edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [128, 256, 384, 512])
 
     reload_dataloaders_every_n_epochs = args.reload_dataloaders_every_n_epochs
     loss_gamma = trial.suggest_float('loss_gamma', 1, 3, step=0.5)
@@ -70,7 +70,7 @@ def objective(trial: optuna.trial.Trial):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
-    epoch = 100
+    epoch = 50
 
     hyperparameters = dict(
         stroke_emb_nb=stroke_emb_nb,
@@ -160,6 +160,7 @@ def objective(trial: optuna.trial.Trial):
             callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_edge'), early_stopping]
         )
         try:
+            torch.cuda.set_device(2)
             trainer.fit(model.to(device), dm)
             return trainer.callback_metrics['val_acc_edge'].item()
 
