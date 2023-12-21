@@ -173,13 +173,13 @@ def objective(trial: optuna.trial.Trial):
             reload_dataloaders_every_n_epochs=reload_dataloaders_every_n_epochs,
             callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
         )
-        try:
-            trainer.fit(model.to(device), dm)
-            return trainer.callback_metrics['val_acc_node'].item()
+        # try:
+        trainer.fit(model.to(device), dm)
+        return trainer.callback_metrics['val_acc_node'].item()
 
-        except Exception as e:
-            print(f"An exception occurred during training: {str(e)}")
-            return 0.0
+        # except Exception as e:
+        #     print(f"An exception occurred during training: {str(e)}")
+        #     return 0.0
 
 
 
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     pruner = optuna.pruners.MedianPruner() 
 
     study = optuna.create_study(direction="maximize", pruner=pruner)
-    study.optimize(objective, n_trials=100, timeout=None, show_progress_bar=True)
+    study.optimize(objective, n_trials=9999, timeout=None, show_progress_bar=True)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
