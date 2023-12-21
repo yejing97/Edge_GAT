@@ -31,43 +31,57 @@ def objective(trial: optuna.trial.Trial):
     # stroke_emb_nb = 150
     # rel_emb_nb = 10
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 151, step=50)
+    node_class_nb = 102
+    edge_class_nb = args.edge_class
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
-    # rel_emb_nb = trial.suggest_int('rel_emb_nb', 5, 11, step=5)
-    rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [10])
+    rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [40])
     total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256, 512])
-    # batch_size = trial.suggest_categorical('batch_size', [16])
-    max_node = trial.suggest_categorical('max_node', [4,8,12,16])
-    # max_node = trial.suggest_categorical('max_node', 16)
+    max_node = trial.suggest_categorical('max_node', [4,8,10,12,16])
     batch_size = total_batch_size // max_node
     lr = trial.suggest_float('lr', 1e-5, 1e-3, log=True)
-    if args.edge_class == 2:
-
-        lambda1 = trial.suggest_float('lambda1', 0.1, 0.3, step=0.05)
-    # lambda1 = 0.6
-    # lambda2 = 1 - lambda1
-        lambda2 = trial.suggest_float('lambda2', 1, 10, step=1)
-    else:
-        lambda1 = trial.suggest_float('lambda1', 0.4, 0.8, step=0.1)
-        lambda2 = 1 - lambda1
+    lambda1 = trial.suggest_float('lambda1', 0.4, 0.8, step=0.1)
+    lambda2 = 1 - lambda1
+    gat_layer = trial.suggest_categorical('gat_layer', [2, 3, 4, 5])
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
-    # dropout = trial.suggest_categorical('dropout', [0.3])
-    gat_n_heads = trial.suggest_categorical('gat_n_heads', [4, 8, 16])
-    # gat_n_heads = 8
-    node_gat_input_size = trial.suggest_categorical('node_gat_input_size', [128, 256, 384, 512])
-    edge_gat_input_size = trial.suggest_categorical('edge_gat_input_size', [128, 256, 384, 512])
-    node_gat_hidden_size = trial.suggest_categorical('node_gat_hidden_size', [128, 256, 384, 512])
-    edge_gat_hidden_size = trial.suggest_categorical('edge_gat_hidden_size', [128, 256, 384, 512])
-    node_gat_output_size = trial.suggest_categorical('node_gat_output_size', [128, 256, 384, 512])
-    edge_gat_output_size = trial.suggest_categorical('edge_gat_output_size', [128, 256, 384, 512])
+    edge_emb_layer = trial.suggest_categorical('edge_emb_layer', [2, 3])
+    readout_layer = trial.suggest_categorical('readout_layer', [2, 3, 4])
+    node_gat_parm = []
+    edge_gat_parm = []
+    gat_heads_parm = []
+    for i in range(gat_layer - 1):
+        random_node = trial.suggest_categorical('random_node_' + str(i), [64, 128, 256, 384, 512])
+        node_gat_parm.append(random_node)
+        random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
+        edge_gat_parm.append(random_edge)
+        random_heads = trial.suggest_categorical('random_heads_' + str(i), [4, 8, 16])
+        gat_heads_parm.append(random_heads)
+    node_gat_parm.append(trial.suggest_categorical('node_gat_parm_' + str(gat_layer - 1), [128, 256, 384, 512]))
+    edge_gat_parm.append(trial.suggest_categorical('edge_gat_parm_' + str(gat_layer - 1), [128, 256, 384, 512]))
+    gat_heads_parm.append(1)
+
+    edge_emb_parm = []
+    edge_emb_parm[0] = rel_emb_nb
+    for i in range(edge_emb_layer - 2):
+        random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
+        edge_emb_parm.append(random_edge)
+    edge_emb_parm[-1] = edge_gat_parm[0]
+
+    node_readout = []
+    edge_readout = []
+    node_readout[0] = node_gat_parm[-1]
+    edge_readout[0] = edge_gat_parm[-1] * 2
+    for i in range(readout_layer - 1):
+        random_node = trial.suggest_categorical('random_node_' + str(i), [64, 128, 256, 384, 512])
+        node_readout.append(random_node)
+        random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
+        edge_readout.append(random_edge)
+    node_readout[-1] = node_class_nb
+    edge_readout[-1] = edge_class_nb
+
+    dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
 
     reload_dataloaders_every_n_epochs = args.reload_dataloaders_every_n_epochs
     loss_gamma = trial.suggest_float('loss_gamma', 1, 3, step=0.5)
-    # node_gat_input_size = 128
-    # edge_gat_input_size = 64
-    # node_gat_hidden_size = 256
-    # edge_gat_hidden_size = 64
-    # node_gat_output_size = 128
-    # edge_gat_output_size = 32
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
@@ -75,20 +89,19 @@ def objective(trial: optuna.trial.Trial):
 
     hyperparameters = dict(
         stroke_emb_nb=stroke_emb_nb,
-        rel_emb_nb=rel_emb_nb * 4,
+        rel_emb_nb=rel_emb_nb,
         batch_size=batch_size,
         max_node=max_node,
         lr=lr,
         lambda1=lambda1,
         lambda2=lambda2,
         dropout=dropout,
-        gat_n_heads=gat_n_heads,
-        node_gat_input_size=node_gat_input_size,
-        edge_gat_input_size=edge_gat_input_size,
-        node_gat_hidden_size=node_gat_hidden_size,
-        edge_gat_hidden_size=edge_gat_hidden_size,
-        node_gat_output_size=node_gat_output_size,
-        edge_gat_output_size=edge_gat_output_size,
+        edge_gat_parm=edge_gat_parm,
+        node_gat_parm=node_gat_parm,
+        gat_heads_parm=gat_heads_parm,
+        edge_emb_parm=edge_emb_parm,
+        node_readout=node_readout,
+        edge_readout=edge_readout,
         loss_gamma=loss_gamma,
         patience=5,
         min_delta=1e-4,
