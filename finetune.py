@@ -60,23 +60,23 @@ def objective(trial: optuna.trial.Trial):
     gat_heads_parm.append(1)
 
     edge_emb_parm = []
-    edge_emb_parm[0] = rel_emb_nb
+    edge_emb_parm.append(rel_emb_nb)
     for i in range(edge_emb_layer - 2):
         random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
         edge_emb_parm.append(random_edge)
-    edge_emb_parm[-1] = edge_gat_parm[0]
+    edge_emb_parm.append(edge_gat_parm[0])
 
     node_readout = []
     edge_readout = []
-    node_readout[0] = node_gat_parm[-1]
-    edge_readout[0] = edge_gat_parm[-1] * 2
+    node_readout.append(node_gat_parm[-1])
+    edge_readout.append(edge_gat_parm[-1] * 2)
     for i in range(readout_layer - 1):
         random_node = trial.suggest_categorical('random_node_' + str(i), [64, 128, 256, 384, 512])
         node_readout.append(random_node)
         random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
         edge_readout.append(random_edge)
-    node_readout[-1] = node_class_nb
-    edge_readout[-1] = edge_class_nb
+    node_readout.append(node_class_nb)
+    edge_readout.append(edge_class_nb)
 
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
 
