@@ -166,7 +166,7 @@ def objective(trial: optuna.trial.Trial):
             verbose=False,
             mode='max'
         )
-        torch.cuda.set_device(args.gpu_id)
+        # torch.cuda.set_device(args.gpu_id)
 
         trainer = pl.Trainer(
             max_epochs=epoch,

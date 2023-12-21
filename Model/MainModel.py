@@ -126,7 +126,7 @@ class MainModel(pl.LightningModule):
         #     self.node_emb = XceptionTime(node_input_size, node_class_nb)
         #     self.edge_emb = torch.nn.Linear(edge_input_size, edge_class_nb)
         # else:
-        self.node_emb = XceptionTime(node_input_size, node_gat_parm[0])
+        self.node_emb = XceptionTime(150, node_gat_parm[0])
         self.edge_emb = Edge_emb(edge_emb_parm, dropout)
         # self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_parm[0])
 

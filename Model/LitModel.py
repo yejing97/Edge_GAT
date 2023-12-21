@@ -23,7 +23,7 @@ class LitModel(pl.LightningModule):
         self.lambda2 = config['lambda2']
         self.lr = float(config['lr'])
         self.node_input_size = config['stroke_emb_nb']
-        self.edge_input_size = (config['rel_emb_nb'])
+        self.edge_input_size = config['rel_emb_nb']
         # self.node_gat_input_size = config['node_gat_input_size']
         # self.edge_gat_input_size = config['edge_gat_input_size']
         # self.node_gat_hidden_size = config['node_gat_hidden_size']
