@@ -11,7 +11,7 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config_name', type=str, default = 'S150_R10_2023_12_21_16_00_23')
+parser.add_argument('--config_name', type=str, default = 'S150_R10_2023_12_21_17_00_00')
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--results_path', type=str, default='val_results')
 parser.add_argument('--logs_path', type=str, default='new_logs')

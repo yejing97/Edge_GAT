@@ -86,7 +86,7 @@ def objective(trial: optuna.trial.Trial):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
-    epoch = 50
+    epoch = 100
 
     hyperparameters = dict(
         stroke_emb_nb=stroke_emb_nb,
@@ -113,7 +113,8 @@ def objective(trial: optuna.trial.Trial):
         epoch = epoch,
         am_type = args.am_type,
         node_type = node_type,
-        reload_dataloaders_every_n_epochs = reload_dataloaders_every_n_epochs
+        reload_dataloaders_every_n_epochs = reload_dataloaders_every_n_epochs,
+        edge_feat = args.edge_feat
         )
 
 
@@ -159,7 +160,7 @@ def objective(trial: optuna.trial.Trial):
             config_path = yaml_path
         )
         early_stopping = pl.callbacks.EarlyStopping(
-            monitor='val_acc_edge',
+            monitor='val_acc_node',
             min_delta=0,
             patience=20,
             verbose=False,
