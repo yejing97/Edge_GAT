@@ -24,13 +24,13 @@ class LitModel(pl.LightningModule):
         self.lr = float(config['lr'])
         self.node_input_size = config['stroke_emb_nb']
         self.edge_input_size = (config['rel_emb_nb'])
-        self.node_gat_input_size = config['node_gat_input_size']
-        self.edge_gat_input_size = config['edge_gat_input_size']
-        self.node_gat_hidden_size = config['node_gat_hidden_size']
-        self.edge_gat_hidden_size = config['edge_gat_hidden_size']
-        self.node_gat_output_size = config['node_gat_output_size']
-        self.edge_gat_output_size = config['edge_gat_output_size']
-        self.gat_n_heads = config['gat_n_heads']
+        # self.node_gat_input_size = config['node_gat_input_size']
+        # self.edge_gat_input_size = config['edge_gat_input_size']
+        # self.node_gat_hidden_size = config['node_gat_hidden_size']
+        # self.edge_gat_hidden_size = config['edge_gat_hidden_size']
+        # self.node_gat_output_size = config['node_gat_output_size']
+        # self.edge_gat_output_size = config['edge_gat_output_size']
+        self.gat_heads_parm = config['gat_heads_parm']
         self.node_class_nb = config['node_class_nb']
         self.edge_class_nb = config['edge_class_nb']
         self.dropout = config['dropout']
@@ -54,7 +54,16 @@ class LitModel(pl.LightningModule):
         # self.readout_node = Readout(self.gat_output_size, self.node_class_nb)
 
         # self.model = MainModel(self.node_input_size, self.edge_input_size, self.gat_input_size, self.gat_hidden_size, self.gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout)
-        self.model = MainModel(self.node_input_size, self.edge_input_size, self.node_gat_input_size, self.edge_gat_input_size, self.node_gat_hidden_size, self.edge_gat_hidden_size, self.node_gat_output_size, self.edge_gat_output_size, self.gat_n_heads, self.node_class_nb, self.edge_class_nb, self.dropout, self.mode)
+        self.model = MainModel(
+            node_input_size = config['stroke_emb_nb'],
+            edge_input_size = config['rel_emb_nb'],
+            edge_emb_parm=config['edge_emb_parm'],
+            node_gat_parm=config['node_gat_parm'],
+            edge_gat_parm=config['edge_gat_parm'],
+            node_class_nb = config['node_class_nb'],
+            edge_class_nb = config['edge_class_nb'],
+            gat_heads_parm = config['gat_heads_parm'],
+            dropout = config['dropout'],)
     
     def load_ckpt(self, ckpt_path):
         ckpt = torch.load(ckpt_path, map_location=self.d)
