@@ -18,6 +18,7 @@ parser.add_argument('--edge_class', type=int, default=14)
 parser.add_argument('--am_type', type=str, default='los')
 parser.add_argument('--node_norm', type=bool, default=True)
 parser.add_argument('--edge_feat', type=str, default='R10')
+parser.add_argument('--gpu_id', type=int, default = 1)
 parser.add_argument('--reload_dataloaders_every_n_epochs', type=int, default = 5)
 args = parser.parse_args()
 def make_yaml(hyperparameters, yaml_path):
@@ -150,19 +151,18 @@ def objective(trial: optuna.trial.Trial):
             verbose=False,
             mode='max'
         )
+        torch.cuda.set_device(args.gpu_id)
 
         trainer = pl.Trainer(
             max_epochs=epoch,
-            accelerator="auto",
-            devices=1,
+            gpus=1,
             logger=logger,
             reload_dataloaders_every_n_epochs=reload_dataloaders_every_n_epochs,
-            callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_edge'), early_stopping]
+            callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
         )
         try:
-            torch.cuda.set_device(2)
             trainer.fit(model.to(device), dm)
-            return trainer.callback_metrics['val_acc_edge'].item()
+            return trainer.callback_metrics['val_acc_node'].item()
 
         except Exception as e:
             print(f"An exception occurred during training: {str(e)}")
