@@ -134,22 +134,26 @@ class LitModel(pl.LightningModule):
             self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
             return loss_edge
         elif self.mode == 'train':
-            node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
-            # print(torch.where(edges_label == 0, 1, 0).sum())
-            node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
-            edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            # print(torch.where(edges_label == 0, 1, 0).sum())
-            loss_edge = self.loss_edge(edge_hat, edges_label)
+            try:
+                node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+                # print(torch.where(edges_label == 0, 1, 0).sum())
+                node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
+                edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+                # print(torch.where(edges_label == 0, 1, 0).sum())
+                loss_edge = self.loss_edge(edge_hat, edges_label)
 
-            loss_node = self.loss_node(node_hat, strokes_label)
-            # loss_edge = self.loss_edge(edge_hat, edges_label)
-            loss = self.lambda1*loss_node + self.lambda2 * loss_edge
+                loss_node = self.loss_node(node_hat, strokes_label)
+                # loss_edge = self.loss_edge(edge_hat, edges_label)
+                loss = self.lambda1*loss_node + self.lambda2 * loss_edge
 
-            self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
-            self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
-            self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+                self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+                self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+                self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
 
-            return loss
+                return loss
+            except:
+                print('error with batch ' + str(batch_idx))
+                return
     
     def validation_step(self, batch, batch_idx):
         try:
@@ -174,33 +178,29 @@ class LitModel(pl.LightningModule):
             self.log('acc', acc, on_epoch=True, prog_bar=False, logger=True)
             return acc
         elif self.mode == 'train':
-            node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
-            node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
-            edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            # print(torch.where(edges_label == 0, 1, 0).sum())
+            try:
+                node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+                node_hat, strokes_label = self.node_filter(node_hat, strokes_label)
+                edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+                # print(torch.where(edges_label == 0, 1, 0).sum())
 
-            loss_edge = self.loss_edge(edge_hat, edges_label)
-            loss_node = self.loss_node(node_hat, strokes_label)
-            loss = self.lambda1*loss_node + self.lambda2 * loss_edge
-            self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
+                loss_edge = self.loss_edge(edge_hat, edges_label)
+                loss_node = self.loss_node(node_hat, strokes_label)
+                loss = self.lambda1*loss_node + self.lambda2 * loss_edge
+                self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
 
-            acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
-            acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-            self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
-            self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
-            self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
-            self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
+                acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+                acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+                self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
+                self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
+                self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
+                self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
+                self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
 
-            # if edge_hat.shape[-1] == 2:
-            #     indices = torch.nonzero(edges_label.reshape(-1)).squeeze()
-            #     edge_hat = edge_hat.reshape(-1)[indices]
-            #     edges_label = edges_label.reshape(-1)[indices]
-            #     print(edge_hat.shape, edges_label.shape)
-            #     acc_edge_inner = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-            #     self.log('val_acc_edge_inner', acc_edge_inner, on_epoch=True, prog_bar=True, logger=True)
-
-            return acc_node
+                return acc_node
+            except:
+                print('error with batch ' + str(batch_idx))
+                return
     
     def on_validation_epoch_end(self) -> None:
         # return super().on_validation_epoch_end()
