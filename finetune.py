@@ -42,7 +42,7 @@ def objective(trial: optuna.trial.Trial):
     lr = trial.suggest_float('lr', 1e-5, 1e-3, log=True)
     lambda1 = trial.suggest_float('lambda1', 0.4, 0.8, step=0.1)
     lambda2 = 1 - lambda1
-    gat_layer = trial.suggest_categorical('gat_layer', [2, 3])
+    gat_layer = trial.suggest_categorical('gat_layer', [2, 3, 4])
     dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     edge_emb_layer = trial.suggest_categorical('edge_emb_layer', [2, 3])
     readout_layer = trial.suggest_categorical('readout_layer', [2, 3])
@@ -58,7 +58,7 @@ def objective(trial: optuna.trial.Trial):
         gat_heads_parm.append(random_heads)
     node_gat_parm.append(trial.suggest_categorical('node_gat_parm_' + str(gat_layer - 1), [128, 256, 384, 512]))
     edge_gat_parm.append(trial.suggest_categorical('edge_gat_parm_' + str(gat_layer - 1), [128, 256, 384, 512]))
-    gat_heads_parm.append(1)
+    gat_heads_parm[-1] = 1
 
     edge_emb_parm = []
     edge_emb_parm.append(rel_emb_nb)
