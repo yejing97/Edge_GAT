@@ -88,6 +88,26 @@ class CROHMEDataset(torch.utils.data.Dataset):
         edge_labels = np.load(os.path.join(path, 'edge_labels' ,name))
         data = {'los':los, 'strokes_emb':strokes_emb, 'edges_emb':edges_emb, 'stroke_labels':stroke_labels, 'edge_labels':edge_labels}
         return data
+    
+    def get_mask(self,edge_labels, start, end):
+        mask = torch.ones(end - start)
+        max_len = edge_labels.shape[0]
+        for i in range(end , start, -1):
+            if i == max_len:
+                break
+            elif (edge_labels[i-1, i] == 1):
+                pos = i - start - 1
+                mask[pos] = 0
+            else:
+                break
+        for i in range(start, end-1):
+            if (edge_labels[i-1, i] == 1):
+                pos = i - start
+                mask[pos] = 0
+            else:
+                break
+        return mask
+
 
     
     def __getitem__(self, index):
@@ -96,6 +116,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         data = self.load_data(self.data_path, name)
         los = torch.from_numpy(data['los'])[start:end,start:end].long()
         am = torch.zeros((los.shape[0], los.shape[1]), dtype=int)
+        mask = self.get_mask(torch.from_numpy(data['edge_labels']), start, end)
         for i in range(los.shape[0] - 1):
             am[i][i+1] = 1
             am[i+1][i] = 1
@@ -116,6 +137,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
             padding_stroke = torch.zeros((self.max_node - end, self.node_emb_nb, 2))
             padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
             padding_stroke_label = torch.zeros((self.max_node - end)).long()
+            padding_mask = torch.zeros((self.max_node - end))
+            mask = torch.cat((padding_mask, mask), dim=0)
             padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
             padding_los = torch.zeros((self.max_node, self.max_node)).long()
             strokes_emb = torch.cat((padding_stroke, torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()), dim=0)
@@ -134,6 +157,8 @@ class CROHMEDataset(torch.utils.data.Dataset):
             padding_stroke = torch.zeros((self.max_node - (end-start), self.node_emb_nb, 2))
             padding_edge = torch.zeros((self.max_node, self.max_node, self.rel_emb_nb))
             padding_stroke_label = torch.zeros(self.max_node - (end-start)).long()
+            padding_mask = torch.zeros((self.max_node - (end-start)))
+            mask = torch.cat((mask, padding_mask), dim=0)
             padding_edge_label = torch.zeros((self.max_node, self.max_node)).long()
             padding_los = torch.zeros((self.max_node, self.max_node)).long()
             strokes_emb = torch.cat((torch.from_numpy(data['strokes_emb'])[start:end,:,:].float(), padding_stroke), dim=0)
@@ -154,7 +179,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         strokes_emb = self.normalize_gaussian_node(strokes_emb)
         edges_emb = self.normalize_gaussian_edge(edges_emb)
         
-        return strokes_emb, edges_emb, los, stroke_labels, edge_labels
+        return strokes_emb, edges_emb, los, stroke_labels, edge_labels, mask
 
 
     def normalize_gaussian_edge(self, data):
