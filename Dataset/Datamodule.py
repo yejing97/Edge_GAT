@@ -51,8 +51,8 @@ class CROHMEDatamodule(pl.LightningDataModule):
         self.dataset_val = CROHMEDataset('val', self.root_path, self.batch_size, self.max_node, self.random_padding_size, self.am_type, self.node_type)
         return torch.utils.data.DataLoader(
             self.dataset_val, 
-            batch_size = self.batch_size,
-            # batch_size = 1,
+            # batch_size = self.batch_size,
+            batch_size = 1,
             shuffle = self.shuffle, 
             num_workers=self.num_workers
             )

@@ -81,8 +81,8 @@ class LitModel(pl.LightningModule):
         # strokes_emb = strokes_emb.squeeze(0)
         strokes_emb = strokes_emb.reshape(strokes_emb.shape[0]*strokes_emb.shape[1], strokes_emb.shape[2], strokes_emb.shape[3])
         edges_emb = edges_emb.reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], -1)
-        strokes_label = strokes_label.squeeze(0).long().reshape(-1)
-        edges_label = edges_label.squeeze(0).long()
+        strokes_label = strokes_label.long().reshape(-1)
+        edges_label = edges_label.long()
         mask = mask.squeeze(0).reshape(-1)
         # los = los.squeeze(0).fill_diagonal_(1).unsqueeze(-1)
         los = los.to(self.d) + torch.eye(los.shape[1], los.shape[2]).repeat(los.shape[0], 1, 1).to(self.d)
@@ -163,12 +163,12 @@ class LitModel(pl.LightningModule):
             #     return
     
     def validation_step(self, batch, batch_idx):
-        try:
-            strokes_emb, edges_emb, los, strokes_label, edges_label, mask = self.load_batch(batch)
-        except:
-            print('error with batch ' + str(batch_idx))
-            print('stroke_emb', batch[0].shape)
-            return
+        # try:
+        strokes_emb, edges_emb, los, strokes_label, edges_label, mask = self.load_batch(batch)
+        # except:
+        #     print('error with batch ' + str(batch_idx))
+        #     print('stroke_emb', batch[0].shape)
+        #     return
         if self.mode == 'pre_train_node':
             node_hat = self.model(strokes_emb, edges_emb, los)
             loss_node = self.loss_node(node_hat, strokes_label)

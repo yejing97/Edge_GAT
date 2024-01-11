@@ -5,3 +5,4 @@ finetunning/
 log/
 config/
 new_logs/
+checkpoints/
