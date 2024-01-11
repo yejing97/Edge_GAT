@@ -26,7 +26,10 @@ class Edge_emb(pl.LightningModule):
     def forward(self, edge_in_features):
         for i in range(len(self.edge_emb_parm) - 1):
             edge_in_features = getattr(self, 'linear' + str(i))(edge_in_features).transpose(1, 2)
-            edge_in_features = getattr(self, 'bn' + str(i))(edge_in_features).transpose(1, 2)
+            try:
+                edge_in_features = getattr(self, 'bn' + str(i))(edge_in_features).transpose(1, 2)
+            except:
+                edge_in_features = edge_in_features.transpose(1, 2)
             edge_in_features = getattr(self, 'activation' + str(i))(edge_in_features)
             edge_in_features = getattr(self, 'dropout' + str(i))(edge_in_features)
         return edge_in_features
@@ -49,8 +52,11 @@ class Multi_GAT(pl.LightningModule):
     def forward(self, node_in_features, edge_in_features, adj_mat):
         for i in range(len(self.node_gat_parm) - 1):
             node_in_features, edge_in_features = getattr(self, 'e_gat' + str(i))(node_in_features, edge_in_features, adj_mat)
-            node_in_features = getattr(self, 'bn_node' + str(i))(node_in_features)
-            edge_in_features = getattr(self, 'bn_edge' + str(i))(edge_in_features)
+            try:
+                node_in_features = getattr(self, 'bn_node' + str(i))(node_in_features)
+                edge_in_features = getattr(self, 'bn_edge' + str(i))(edge_in_features)
+            except:
+                pass
             node_in_features = getattr(self, 'activation' + str(i))(node_in_features)
             edge_in_features = getattr(self, 'activation' + str(i))(edge_in_features)
             node_in_features = getattr(self, 'dropout' + str(i))(node_in_features)
@@ -76,11 +82,17 @@ class Multi_Readout(pl.LightningModule):
         for i in range(len(self.readout_parm) - 2):
 
             in_features = getattr(self, 'readout' + str(i))(in_features)
-            in_features = getattr(self, 'bn' + str(i))(in_features)
+            try:
+                in_features = getattr(self, 'bn' + str(i))(in_features)
+            except:
+                pass
             in_features = getattr(self, 'activation' + str(i))(in_features)
             in_features = getattr(self, 'dropout' + str(i))(in_features)
         in_features = getattr(self, 'readout' + str(len(self.readout_parm) - 2))(in_features)
-        in_features = getattr(self, 'bn' + str(len(self.readout_parm) - 2))(in_features)
+        try:
+            in_features = getattr(self, 'bn' + str(len(self.readout_parm) - 2))(in_features)
+        except:
+            pass
         in_features = self.softmax(in_features)
         return in_features
     
@@ -164,8 +176,8 @@ class MainModel(pl.LightningModule):
         # elif self.mode == 'pre_train_edge':
         #     return self.edge_emb(edge_in_features.squeeze(0))
         # elif self.mode == 'train':
-        node_emb_feat = self.node_emb(node_in_features.squeeze(0))
-        edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
+        node_emb_feat = self.node_emb(node_in_features)
+        edge_emb_feat = self.edge_emb(edge_in_features)
         node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
         # print('node_gat_feat', node_gat_feat.shape)
         # print('edge_gat_feat', edge_gat_feat.shape)

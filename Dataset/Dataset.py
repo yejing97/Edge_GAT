@@ -54,13 +54,19 @@ class CROHMEDataset(torch.utils.data.Dataset):
     
     def make_list(self):
         sub_eq_list = []
-        for name in self.data_list:
-            n = name.split('_')[0]
-            node_nb = int(n.split('E')[0].split('N')[1])
-            if node_nb > self.max_node:
-                sub_eq_list = sub_eq_list + self.padding(name, self.max_node, node_nb, self.pad)
-            else:
+        if self.max_node == -1:
+            for name in self.data_list:
+                n = name.split('_')[0]
+                node_nb = int(n.split('E')[0].split('N')[1])
                 sub_eq_list = sub_eq_list + [[name, node_nb, 0, node_nb]]
+        else:
+            for name in self.data_list:
+                n = name.split('_')[0]
+                node_nb = int(n.split('E')[0].split('N')[1])
+                if node_nb > self.max_node:
+                    sub_eq_list = sub_eq_list + self.padding(name, self.max_node, node_nb, self.pad)
+                else:
+                    sub_eq_list = sub_eq_list + [[name, node_nb, 0, node_nb]]
         return sub_eq_list
 
     def padding(self, name, max_node, shape, pad):
@@ -120,15 +126,14 @@ class CROHMEDataset(torch.utils.data.Dataset):
         for i in range(los.shape[0] - 1):
             am[i][i+1] = 1
             am[i+1][i] = 1
-        if self.am_type == 'los':
-        # los = am
-            los = torch.logical_and(los.bool(), am.bool()).int()
-        elif self.am_type == 'seq':
-            los = am
-        else:
-            print('error am_type')
-            return
-        if end - start == self.max_node:
+        los = torch.logical_or(los.bool(), am.bool()).int()
+        if self.max_node == -1:
+            strokes_emb = torch.from_numpy(data['strokes_emb']).float()
+            edges_emb = torch.from_numpy(data['edges_emb']).float().reshape(end - start, end - start, -1)
+            stroke_labels = torch.from_numpy(data['stroke_labels']).long()
+            edge_labels = torch.from_numpy(data['edge_labels']).long()
+            
+        elif end - start == self.max_node:
             strokes_emb = torch.from_numpy(data['strokes_emb'])[start:end,:,:].float()
             edges_emb = torch.from_numpy(data['edges_emb'])[start:end,start:end,:].float().reshape(end - start, end - start, -1)
             stroke_labels = torch.from_numpy(data['stroke_labels'])[start:end].long()

@@ -101,9 +101,12 @@ class LitModel(pl.LightningModule):
             edges_label = torch.where(edges_label == 1, 1, 0)
         elif edges_emb.shape[1] == 14:
             edges_label = torch.where(edges_label < 14, edges_label, 0)
-        los = los.squeeze().fill_diagonal_(0)
-        los = torch.triu(los)
-        indices = torch.nonzero(los.reshape(-1)).squeeze()
+        try:
+            los = los.squeeze().fill_diagonal_(0)
+            los = torch.triu(los)
+        except:
+            los = torch.zeros(0)
+        indices = torch.nonzero(los.reshape(-1)).squeeze().reshape(-1)
         edges_label = edges_label[indices]
         edges_emb = edges_emb.reshape(-1, edges_emb.shape[-1])[indices]
         return edges_emb, edges_label
@@ -141,12 +144,13 @@ class LitModel(pl.LightningModule):
             self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
             return loss_edge
         elif self.mode == 'train':
+            print(strokes_emb.shape)
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             # try:
                 # print(torch.where(edges_label == 0, 1, 0).sum())
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            # print(torch.where(edges_label == 0, 1, 0).sum())
+
             loss_edge = self.loss_edge(edge_hat, edges_label)
 
             loss_node = self.loss_node(node_hat, strokes_label)
