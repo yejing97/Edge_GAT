@@ -144,7 +144,6 @@ class LitModel(pl.LightningModule):
             self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
             return loss_edge
         elif self.mode == 'train':
-            print(strokes_emb.shape)
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             # try:
                 # print(torch.where(edges_label == 0, 1, 0).sum())
