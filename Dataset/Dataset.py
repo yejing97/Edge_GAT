@@ -184,7 +184,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         strokes_emb = self.normalize_gaussian_node(strokes_emb)
         edges_emb = self.normalize_gaussian_edge(edges_emb)
         
-        return strokes_emb, edges_emb, los, stroke_labels, edge_labels, mask
+        return name, strokes_emb, edges_emb, los, stroke_labels, edge_labels, mask
 
 
     def normalize_gaussian_edge(self, data):

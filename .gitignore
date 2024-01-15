@@ -6,3 +6,5 @@ log/
 config/
 new_logs/
 checkpoints/
+results/
+lightning_logs/

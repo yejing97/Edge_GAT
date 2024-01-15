@@ -1,3 +1,5 @@
+from typing import Any, Optional
+from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
 import yaml
 import pytorch_lightning as pl
@@ -46,6 +48,10 @@ class LitModel(pl.LightningModule):
         self.loss_edge = FocalLoss(gamma=2)
 
         self.validation_step_outputs = []
+        self.test_step_outputs = []
+        self.node_correct = 0
+        self.edge_correct = 0
+        self.all_correct = 0
         # self.node_emb_model = XceptionTime(self.node_input_size, self.gat_input_size)
         # if os.path.isfile(self.ckpt_path):
         #     self.node_emb_model.load_state_dict(self.load_ckpt(self.ckpt_path), strict=False)
@@ -77,7 +83,7 @@ class LitModel(pl.LightningModule):
         return new_state_dict
 
     def load_batch(self, batch):
-        strokes_emb, edges_emb, los, strokes_label, edges_label, mask = batch
+        name, strokes_emb, edges_emb, los, strokes_label, edges_label, mask = batch
         # strokes_emb = strokes_emb.squeeze(0)
         strokes_emb = strokes_emb.reshape(strokes_emb.shape[0]*strokes_emb.shape[1], strokes_emb.shape[2], strokes_emb.shape[3])
         edges_emb = edges_emb.reshape(edges_emb.shape[0],edges_emb.shape[1], edges_emb.shape[2], -1)
@@ -93,7 +99,7 @@ class LitModel(pl.LightningModule):
             new_los[i*los.shape[1]:(i+1)*los.shape[1], i*los.shape[1]:(i+1)*los.shape[1]] = los[i]
             new_edges_label[i*edges_label.shape[1]:(i+1)*edges_label.shape[1], i*edges_label.shape[1]:(i+1)*edges_label.shape[1]] = edges_label[i]
             new_edges_emb[i*edges_emb.shape[1]:(i+1)*edges_emb.shape[1], i*edges_emb.shape[1]:(i+1)*edges_emb.shape[1]] = edges_emb[i]
-        return strokes_emb.to(self.d), new_edges_emb.to(self.d), new_los.unsqueeze(-1).to(self.d), strokes_label.to(self.d), new_edges_label.to(self.d).reshape(-1), mask.to(self.d)
+        return strokes_emb.to(self.d), new_edges_emb.to(self.d), new_los.unsqueeze(-1).to(self.d), strokes_label.to(self.d), new_edges_label.to(self.d).reshape(-1), mask.to(self.d), name
     
     def edge_filter(self, edges_emb, edges_label, los):
         if edges_emb.shape[1] == 2:
@@ -123,9 +129,26 @@ class LitModel(pl.LightningModule):
         node_emb = node_emb[indices]
         return node_emb, node_label
     
+    def edge_mask(self, edges_emb, edges_label, los):
+        if edges_emb.shape[1] == 2:
+            # print('edge class = 2')
+            edges_label = torch.where(edges_label == 1, 1, 0)
+        elif edges_emb.shape[1] == 14:
+            edges_label = torch.where(edges_label < 14, edges_label, 0)
+        try:
+            los = los.squeeze().fill_diagonal_(0)
+            los = torch.triu(los)
+        except:
+            los = torch.zeros(0)
+        edges_label = edges_label.reshape(los.shape[0], los.shape[1])
+        edges_emb = edges_emb.reshape(los.shape[0], los.shape[1], -1)
+        edges_label = edges_label * los
+        edges_emb = edges_emb * los.unsqueeze(-1)
+        return edges_emb, edges_label
+    
     def training_step(self, batch, batch_idx):
         # try:
-        strokes_emb, edges_emb, los, strokes_label, edges_label, mask = self.load_batch(batch)
+        strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
         # except:
         #     print('error with batch ' + str(batch_idx))
         #     print('stroke_emb', batch[0].shape)
@@ -167,7 +190,7 @@ class LitModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         # try:
-        strokes_emb, edges_emb, los, strokes_label, edges_label, mask = self.load_batch(batch)
+        strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
         # except:
         #     print('error with batch ' + str(batch_idx))
         #     print('stroke_emb', batch[0].shape)
@@ -210,6 +233,38 @@ class LitModel(pl.LightningModule):
             self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
 
             return acc_node
+    def test_step(self, batch, batch_idx):
+        # try:
+        strokes_emb, edges_emb, los, strokes_label, edges_label, mask, name = self.load_batch(batch)
+        node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+        try:
+            edge_hat_save, edges_label_save = self.edge_mask(edge_hat, edges_label, los)
+            torch.save([node_hat, edge_hat_save,strokes_label, edges_label_save], os.path.join(self.results_path, 'test',name[0].split('.')[0] + '.pt'))
+        except:
+            print('error with ' + str(name))
+            return
+        
+        edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+        
+        # edges_label = edges_label.reshape(-1)
+        # edge_hat = edge_hat.reshape(-1, edge_hat.shape[-1])
+        acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+        acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+        self.log('test_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
+        if acc_node == 1:
+            self.node_correct += 1
+        if acc_edge == 1:
+            self.edge_correct += 1
+        if acc_node == 1 and acc_edge == 1:
+            self.all_correct += 1
+        return acc_node
+    
+    def on_test_epoch_end(self) -> None:
+        print('node acc: ' + str(self.node_correct))
+        print('edge acc: ' + str(self.edge_correct))
+        print('all acc: ' + str(self.all_correct))
+        
 
     
     def on_validation_epoch_end(self) -> None:

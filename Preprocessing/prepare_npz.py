@@ -12,9 +12,9 @@ import os
 import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--list', type=list, default=['edge_labels', 'stroke_labels'])
+parser.add_argument('--list', type=list, default=['sym_emb', 'rel_emb'])
 parser.add_argument('--parallel', type=bool, default=True)
-parser.add_argument('--tag', type=str, default='train')
+parser.add_argument('--tag', type=str, default='test')
 
 args = parser.parse_args()
 
