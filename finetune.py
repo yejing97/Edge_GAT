@@ -33,7 +33,7 @@ def objective(trial: optuna.trial.Trial):
     # stroke_emb_nb = trial.suggest_int('stroke_emb_nb', 100, 151, step=50)
     node_class_nb = 102
     edge_class_nb = args.edge_class
-    node_type = trial.suggest_categorical('node_type', ['norm', 'no_norm'])
+    node_type = trial.suggest_categorical('node_type', ['norm'])
     stroke_emb_nb = trial.suggest_categorical('stroke_emb_nb', [150])
     rel_emb_nb = trial.suggest_categorical('rel_emb_nb', [40])
     total_batch_size = trial.suggest_categorical('total_batch_size', [128, 256, 512])
