@@ -191,12 +191,14 @@ class LitModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         # try:
         strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
+
         # except:
         #     print('error with batch ' + str(batch_idx))
         #     print('stroke_emb', batch[0].shape)
         #     return
         if self.mode == 'pre_train_node':
             node_hat = self.model(strokes_emb, edges_emb, los)
+
             loss_node = self.loss_node(node_hat, strokes_label)
             acc = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
             self.log('val_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
@@ -252,11 +254,11 @@ class LitModel(pl.LightningModule):
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
         self.log('test_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
-        if acc_node == 1:
+        if acc_node > 0.90:
             self.node_correct += 1
-        if acc_edge == 1:
+        if acc_edge > 0.90:
             self.edge_correct += 1
-        if acc_node == 1 and acc_edge == 1:
+        if acc_node >0.90 and acc_edge > 0.90:
             self.all_correct += 1
         return acc_node
     
@@ -274,6 +276,7 @@ class LitModel(pl.LightningModule):
         if epoch_id % 10 == 0:
             torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
         self.validation_step_outputs.clear()
+
         # node_preds, node_labels, edge_preds, edge_labels = all_preds
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

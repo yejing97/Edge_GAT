@@ -11,8 +11,8 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--checkpoint_name', type=str, default = 'version10')
-parser.add_argument('--config_name', type=str, default='S150_R10_2024_01_05_06_13_30')
+parser.add_argument('--checkpoint_name', type=str, default = 'epoch=99-step=95074')
+parser.add_argument('--config_name', type=str, default='edge_class14')
  
 args = parser.parse_args()
 args = vars(parser.parse_args())
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             )
         
         trainer = pl.Trainer(
-            max_epochs=100,
+            max_epochs=90,
             gpus = 1,
             accelerator="auto",
             )

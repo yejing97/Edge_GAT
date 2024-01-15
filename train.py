@@ -1,6 +1,7 @@
 from Model.LitModel import LitModel
 # from Model.MOModel import MOModel
 from Dataset.Datamodule import CROHMEDatamodule
+from pytorch_lightning.callbacks import ModelCheckpoint
 # from make_data import make_data
 import torch
 import pytorch_lightning as pl
@@ -11,7 +12,7 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config_name', type=str, default = 'S150_R10_2023_12_21_17_00_00')
+parser.add_argument('--config_name', type=str, default = 'edge_class14')
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--results_path', type=str, default='val_results')
 parser.add_argument('--logs_path', type=str, default='new_logs')
@@ -69,11 +70,20 @@ if __name__ == '__main__':
     )
     num_available_gpus = torch.cuda.device_count()
 
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_acc_node',
+        mode='max',
+        dirpath='./checkpoints',
+        filename= exp_name + '-{epoch:02d}-{val_acc_node:.2f}',
+        save_top_k=3,
+        save_last=True,
+    )
+
     # for device_idx in range(num_available_gpus):
     #     print(torch.cuda.get_device_name(device_idx))
     #     try:
     #         torch.cuda.set_device(device_idx)
-    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto",auto_select_gpus=True, gpus= 1,logger=logger,reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'])
+    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto",auto_select_gpus=True, gpus= 1,logger=logger,reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'],callbacks=[checkpoint_callback])
         # ['reload_dataloaders_every_n_epochs'])
         #     trainer = pl.Trainer(max_epochs = cfg['epoch'], gpus= 1,logger=logger)
         #     trainer.fit(model.to(device), dm)
