@@ -147,15 +147,16 @@ class LitModel(pl.LightningModule):
         return edges_emb, edges_label
     
     def am_for_pretrain(self, edges_label, los):
-        am = torch.where(edges_label == 1, 1, 0)
-        return am.reshape(los.shape[0], los.shape[1], los.shape[2])
+        am = torch.where(edges_label == 1, 1, 0).reshape(los.shape[0], los.shape[1], los.shape[2])
+        for i in range(los.shape[0] - 1):
+            am[i][i] = 1
+        return am
     
     def training_step(self, batch, batch_idx):
         # try:
         strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
         if self.mode == 'pre_train':
             los = self.am_for_pretrain(edges_label, los)
-            # print(los)
             # return
             node_hat, edges_hat = self.model(strokes_emb, edges_emb, los)
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
