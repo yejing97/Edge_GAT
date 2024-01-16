@@ -146,27 +146,21 @@ class LitModel(pl.LightningModule):
         edges_emb = edges_emb * los.unsqueeze(-1)
         return edges_emb, edges_label
     
+    def am_for_pretrain(self, edges_label, los):
+        am = torch.where(edges_label == 1, 1, 0)
+        return am.reshape(los.shape[0], los.shape[1], los.shape[2])
+    
     def training_step(self, batch, batch_idx):
         # try:
         strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
-        # except:
-        #     print('error with batch ' + str(batch_idx))
-        #     print('stroke_emb', batch[0].shape)
-        #     return
-        if self.mode == 'pre_train_node':
-            node_hat = self.model(strokes_emb, edges_emb, los)
+        if self.mode == 'pre_train':
+            los = self.am_for_pretrain(edges_label, los)
+            node_hat, _ = self.model(strokes_emb, edges_emb, los)
+            node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
             loss_node = self.loss_node(node_hat, strokes_label)
-            loss = loss_node
             self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
-            return loss
-        elif self.mode == 'pre_train_edge':
-            edge_hat = self.model(strokes_emb, edges_emb, los)
-            edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            loss_edge = self.loss_edge(edge_hat, edges_label)
-            loss = loss_edge
-            self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
-            return loss_edge
-        elif self.mode == 'train':
+            return loss_node
+        else:
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             # try:
                 # print(torch.where(edges_label == 0, 1, 0).sum())
@@ -196,23 +190,15 @@ class LitModel(pl.LightningModule):
         #     print('error with batch ' + str(batch_idx))
         #     print('stroke_emb', batch[0].shape)
         #     return
-        if self.mode == 'pre_train_node':
-            node_hat = self.model(strokes_emb, edges_emb, los)
-
+        if self.mode == 'pre_train':
+            los = self.am_for_pretrain(edges_label, los)
+            node_hat, _ = self.model(strokes_emb, edges_emb, los)
+            node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
             loss_node = self.loss_node(node_hat, strokes_label)
-            acc = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
             self.log('val_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
-            self.log('acc', acc, on_epoch=True, prog_bar=False, logger=True)
-            return acc
-        elif self.mode == 'pre_train_edge':
-            edge_hat = self.model(strokes_emb, edges_emb, los)
-            edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            loss_edge = self.loss_edge(edge_hat, edges_label)
-            acc = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-            self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
-            self.log('acc', acc, on_epoch=True, prog_bar=False, logger=True)
-            return acc
-        elif self.mode == 'train':
+            acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+            return acc_node
+        else:
             node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
             try:
                 node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
@@ -254,11 +240,11 @@ class LitModel(pl.LightningModule):
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
         self.log('test_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
-        if acc_node > 0.90:
+        if acc_node == 1:
             self.node_correct += 1
-        if acc_edge > 0.90:
+        if acc_edge == 1:
             self.edge_correct += 1
-        if acc_node >0.90 and acc_edge > 0.90:
+        if acc_node == 1 and acc_edge == 1:
             self.all_correct += 1
         return acc_node
     

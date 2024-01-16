@@ -11,7 +11,7 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--checkpoint_name', type=str, default = 'epoch=99-step=95074')
+parser.add_argument('--checkpoint_name', type=str, default = 'edge_class14-epoch=99-val_acc_node=0.86')
 parser.add_argument('--config_name', type=str, default='edge_class14')
  
 args = parser.parse_args()
