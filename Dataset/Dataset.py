@@ -124,6 +124,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         am = torch.zeros((los.shape[0], los.shape[1]), dtype=int)
         mask = self.get_mask(torch.from_numpy(data['edge_labels']), start, end)
         for i in range(los.shape[0] - 1):
+            am[i][i] = 1
             am[i][i+1] = 1
             am[i+1][i] = 1
         los = torch.logical_or(los.bool(), am.bool()).int()
