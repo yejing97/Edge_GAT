@@ -42,6 +42,8 @@ class EdgeGraphAttention(pl.LightningModule):
             # self.n_hidden = out_features // 3
         self.linear_l = nn.Linear(node_in_features, self.n_hidden_node * n_heads, bias=False)
         self.linear_b = nn.Linear(edge_in_features, self.n_hidden_edge * n_heads, bias=False)
+        for param in self.linear_b.parameters():
+            param.requires_grad = False
         if share_weights:
             self.linear_r = self.linear_l
         else:

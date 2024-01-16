@@ -140,12 +140,16 @@ class MainModel(pl.LightningModule):
         # else:
         self.node_emb = XceptionTime(150, node_gat_parm[0])
         self.edge_emb = Edge_emb(edge_emb_parm, dropout)
+        for param in self.edge_emb.parameters():
+            param.requires_grad = False
         # self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_parm[0])
 
         self.edge_gat = Multi_GAT(node_gat_parm, edge_gat_parm, gat_heads_parm, dropout)
 
         self.readout_node = Multi_Readout(node_readout, dropout)
         self.readout_edge = Multi_Readout(edge_readout, dropout)
+        for param in self.readout_edge.parameters():
+            param.requires_grad = False
 
 
             # self.edge_gat1 = EdgeGraphAttention(node_gat_input_size, edge_gat_input_size, node_gat_hidden_size, edge_gat_hidden_size, gat_n_heads, dropout = dropout)

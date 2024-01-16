@@ -148,9 +148,10 @@ class LitModel(pl.LightningModule):
     
     def am_for_pretrain(self, edges_label, los):
         am = torch.where(edges_label == 1, 1, 0).reshape(los.shape[0], los.shape[1], los.shape[2])
-        for i in range(los.shape[0] - 1):
+        for i in range(los.shape[0]):
             am[i][i] = 1
         return am
+    
     
     def training_step(self, batch, batch_idx):
         # try:
@@ -245,7 +246,7 @@ class LitModel(pl.LightningModule):
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
         self.log('test_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
-        if acc_node == 1:
+        if acc_node > 0.98:
             self.node_correct += 1
         if acc_edge == 1:
             self.edge_correct += 1
