@@ -146,15 +146,15 @@ class PretrainDatamodule(pl.LightningDataModule):
 class LightModel(pl.LightningModule):
     def __init__(self) -> None:
         super().__init__()
-        self.model = XceptionTime(args.stroke_emb_nb, 384)
-        self.linear = torch.nn.Linear(384, args.stroke_class_nb)
+        self.model = XceptionTime(args.stroke_emb_nb, args.stroke_class_nb)
+        # self.linear = torch.nn.Linear(384, args.stroke_class_nb)
         self.softmax = torch.nn.Softmax(dim = -1)
         self.loss = torch.nn.CrossEntropyLoss()
 
     def training_step(self, batch, batch_idx):
         strokes_emb, strokes_label = batch
         output = self.model(strokes_emb.to(args.device))
-        output = self.linear(output)
+        # output = self.linear(output)
         output = self.softmax(output)
         loss = self.loss(output, strokes_label.to(args.device).long())
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
@@ -163,7 +163,7 @@ class LightModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         strokes_emb, strokes_label = batch
         output = self.model(strokes_emb.to(args.device))
-        output = self.linear(output)
+        # output = self.linear(output)
         output = self.softmax(output)
         loss = self.loss(output, strokes_label.to(args.device).long())
         acc = accuracy_score(strokes_label.cpu().numpy(), output.cpu().argmax(dim=1).numpy())
