@@ -183,7 +183,6 @@ class LightModel(pl.LightningModule):
 
 model = LightModel()
 dm = PretrainDatamodule()
-dm.setup('train')
 early_stop_callback = EarlyStopping(monitor="val_acc", min_delta=0.00, patience=3, verbose=False, mode="max")
 exp_name = args.root_path.split('/')[-2] + '_lr_' + str(args.lr) + '_batch_size_' + str(args.batch_size)
 logger = pl.loggers.TensorBoardLogger('pretrain_logs', name=exp_name)
