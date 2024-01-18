@@ -157,11 +157,10 @@ class LitModel(pl.LightningModule):
         # try:
         strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
         if self.mode == 'pre_train':
-            los = self.am_for_pretrain(edges_label, los)
+            # los = self.am_for_pretrain(edges_label, los)
             # return
-            node_hat, edges_hat = self.model(strokes_emb, edges_emb, los)
+            node_hat= self.model(strokes_emb, edges_emb, los)
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
-            # edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             loss_node = self.loss_node(node_hat, strokes_label)
             self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
             return loss_node
@@ -197,7 +196,7 @@ class LitModel(pl.LightningModule):
         #     return
         if self.mode == 'pre_train':
             los = self.am_for_pretrain(edges_label, los)
-            node_hat, _ = self.model(strokes_emb, edges_emb, los)
+            node_hat= self.model(strokes_emb, edges_emb, los)
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
             loss_node = self.loss_node(node_hat, strokes_label)
             self.log('val_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)

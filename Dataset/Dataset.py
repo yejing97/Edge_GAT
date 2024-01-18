@@ -7,6 +7,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
     def __init__(self, data_type, root_path, batch_size, max_node, random_padding_size, am_type, node_type):
         super().__init__()
         print('random_padding_size: ', data_type, random_padding_size)
+        self.mode = 'pre_train'
         self.max_node = max_node
         self.am_type = am_type
         self.pad = random_padding_size
@@ -184,6 +185,12 @@ class CROHMEDataset(torch.utils.data.Dataset):
 
         strokes_emb = self.normalize_gaussian_node(strokes_emb)
         edges_emb = self.normalize_gaussian_edge(edges_emb)
+
+        if self.mode == 'pre_train':
+            am = torch.where(edge_labels == 1, 1, 0)
+            sym_mask,_ = self.connected_components_mask(am)
+            strokes_emb = self.sub_graph_pooling(strokes_emb, sym_mask)
+
         
         return name, strokes_emb, edges_emb, los, stroke_labels, edge_labels, mask
 
@@ -198,6 +205,38 @@ class CROHMEDataset(torch.utils.data.Dataset):
         std = data.std(dim = (0,1), keepdim=True)
         return (data - mean) / (std + 1e-7)
 
+
+    def connected_components_mask(self, adjacency_matrix):
+            adjacency_matrix = adjacency_matrix.cpu()
+            # batch_nb = adjacency_matrix.shape[0]
+            num_nodes = adjacency_matrix.shape[0]
+            visited = torch.zeros(num_nodes, dtype=bool)
+            def dfs(node, component):
+                visited[node] = True
+                component.append(node)
+                for neighbor in range(num_nodes):
+                    if adjacency_matrix[node][neighbor] == 1 and not visited[neighbor]:
+                        dfs(neighbor, component)
+            components = []
+            for node in range(num_nodes):
+                if not visited[node]:
+                    component = []
+                    dfs(node, component)
+                    components.append(component)
+            max_node = max(max(component) for component in components) + 1
+            mask = torch.zeros(len(components), max_node, dtype=torch.int)
+            for i, component in enumerate(components):
+                for node in component:
+                    mask[i][node] = 1
+            return mask, components
+    
+    def sub_graph_pooling(self, node_feat, mask):
+        node_feat_repeat = node_feat.unsqueeze(0).repeat(mask.shape[0], 1,1,1)
+        node_out = torch.sum(node_feat_repeat * mask.unsqueeze(-1).unsqueeze(-1), dim=1)
+        node_out = node_out/mask.sum(dim=1).unsqueeze(-1).unsqueeze(-1)
+        node_out = torch.matmul(mask.t().float(), node_out.reshape(node_out.shape[0], -1))
+        node_out = node_out.reshape(node_feat.shape[0], node_feat.shape[1], -1)
+        return node_out
     # def __getitem__(self, index):
     #     batch_list = self.group_list[index]
     #     batch_strokes_emb = torch.zeros((self.batch_node_nb[index], self.node_emb_nb, 2))
