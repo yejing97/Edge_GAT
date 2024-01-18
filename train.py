@@ -83,7 +83,13 @@ if __name__ == '__main__':
     #     print(torch.cuda.get_device_name(device_idx))
     #     try:
     #         torch.cuda.set_device(device_idx)
-    trainer = pl.Trainer(max_epochs = cfg['epoch'], accelerator="auto",auto_select_gpus=True, gpus= 1,logger=logger,reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'],callbacks=[checkpoint_callback])
+    trainer = pl.Trainer(
+        max_epochs = cfg['epoch'], 
+        accelerator="auto",
+        auto_select_gpus=True, 
+        gpus= 1,
+        logger=logger,
+        reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'],callbacks=[checkpoint_callback])
         # ['reload_dataloaders_every_n_epochs'])
         #     trainer = pl.Trainer(max_epochs = cfg['epoch'], gpus= 1,logger=logger)
         #     trainer.fit(model.to(device), dm)

@@ -12,11 +12,11 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 parser = argparse.ArgumentParser()
 # parser.add_argument('--root_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/S100_R5_Speed_False/')
-parser.add_argument('--root_path', type=str, default='/home/xie-y/data/Edge_GAT/S100_R5_Speed_False/')
+parser.add_argument('--root_path', type=str, default='/home/xie-y/data/Edge_GAT/S150_R10/')
 parser.add_argument('--stroke_emb_nb', type=int, default=100)
-parser.add_argument('--stroke_class_nb', type=int, default=114)
+parser.add_argument('--stroke_class_nb', type=int, default=102)
 parser.add_argument('--epoch', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--batch_size', type=int, default=250)
 parser.add_argument('--num_workers', type=int, default=0)
 parser.add_argument('--shuffle', type=bool, default=True)
 parser.add_argument('--lr', type=float, default=0.001)
@@ -136,8 +136,8 @@ exp_name = args.root_path.split('/')[-2] + '_lr_' + str(args.lr) + '_batch_size_
 logger = pl.loggers.TensorBoardLogger('pretrain_logs', name=exp_name)
 trainer = pl.Trainer(
     max_epochs=args.epoch,
-    accelerator=args.device,
-    devices=1,
+    accelerator="auto",
+    gpus= 1,
     callbacks=[early_stop_callback],
     logger=logger
 )
