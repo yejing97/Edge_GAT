@@ -58,6 +58,11 @@ def sub_graph_pooling(node_feat, mask):
     node_out = node_out.reshape(node_feat.shape[0], node_feat.shape[1], -1)
     return node_out
 
+def normalize_gaussian_node(data):
+        mean = data.mean(dim = (0,1), keepdim=True)
+        std = data.std(dim = (0,1), keepdim=True)
+        return (data - mean) / (std + 1e-7)
+
 def make_pt(npz_path, tgt_path, type):
     X = torch.empty(0, 150, 2)
     y = torch.empty(0)
@@ -73,11 +78,15 @@ def make_pt(npz_path, tgt_path, type):
                 edge_labels = np.load(os.path.join(npz_path, type, 'edge_labels', file))
                 edge_labels = torch.from_numpy(edge_labels).long()
                 am = torch.where(edge_labels == 1, 1, 0)
-                try:
-                    sym_mask,_ = connected_components_mask(am)
-                    strokes_emb = sub_graph_pooling(strokes_emb, sym_mask)
-                except:
-                    print(file + ' has error')
+                # try:
+                #     new_mask = torch.where(torch.sum(am, dim=1) !=0, 0, 1)
+                #     print(new_mask)
+                #     edge_labels = edge_labels * new_mask
+                #     stroke_labels = stroke_labels * new_mask
+                #     # sym_mask,_ = connected_components_mask(am)
+                #     # strokes_emb = sub_graph_pooling(strokes_emb, sym_mask)
+                # except:
+                #     print(file + ' has error')
 
                 X = torch.cat((X, strokes_emb), dim=0)
                 y = torch.cat((y, stroke_labels), dim=0)
@@ -146,15 +155,16 @@ class PretrainDatamodule(pl.LightningDataModule):
 class LightModel(pl.LightningModule):
     def __init__(self) -> None:
         super().__init__()
-        self.model = XceptionTime(args.stroke_emb_nb, args.stroke_class_nb)
-        # self.linear = torch.nn.Linear(384, args.stroke_class_nb)
+        self.model = XceptionTime(args.stroke_emb_nb, 384)
+        self.linear = torch.nn.Linear(384, args.stroke_class_nb)
         self.softmax = torch.nn.Softmax(dim = -1)
         self.loss = torch.nn.CrossEntropyLoss()
 
     def training_step(self, batch, batch_idx):
         strokes_emb, strokes_label = batch
+        strokes_emb = normalize_gaussian_node(strokes_emb)
         output = self.model(strokes_emb.to(args.device))
-        # output = self.linear(output)
+        output = self.linear(output)
         output = self.softmax(output)
         loss = self.loss(output, strokes_label.to(args.device).long())
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
@@ -162,8 +172,9 @@ class LightModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         strokes_emb, strokes_label = batch
+        strokes_emb = normalize_gaussian_node(strokes_emb)
         output = self.model(strokes_emb.to(args.device))
-        # output = self.linear(output)
+        output = self.linear(output)
         output = self.softmax(output)
         loss = self.loss(output, strokes_label.to(args.device).long())
         acc = accuracy_score(strokes_label.cpu().numpy(), output.cpu().argmax(dim=1).numpy())
