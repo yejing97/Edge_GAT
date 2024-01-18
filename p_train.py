@@ -8,7 +8,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--type', type=str, default='allsymble')
 parser.add_argument('--batch_size', type=int, default=250)
-parser.add_argument('--lr', type=int, default=1e-3)
+parser.add_argument('--lr', type=float, default=1e-3)
 args = parser.parse_args()
 
 model_args = {
