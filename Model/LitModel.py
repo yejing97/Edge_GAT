@@ -161,7 +161,6 @@ class LitModel(pl.LightningModule):
             # return
             node_hat= self.model(strokes_emb, edges_emb, los)
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
-            print(node_hat.shape, strokes_label.shape)
             loss_node = self.loss_node(node_hat, strokes_label)
             self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
             return loss_node
@@ -202,7 +201,6 @@ class LitModel(pl.LightningModule):
             loss_node = self.loss_node(node_hat, strokes_label)
             self.log('val_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
             acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
-            print(acc_node)
             self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
             return acc_node
         else:
