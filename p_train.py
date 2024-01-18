@@ -2,6 +2,7 @@ import torch
 import os
 from tsai.all import *
 import argparse
+from pytorch_lightning.callbacks import ModelCheckpoint
 # import load
 # import make_pt
 # import normalization
@@ -18,8 +19,8 @@ model_args = {
     'epochs': 100,
     'lr': args.lr,
     'batch_size': args.batch_size,
-    'min_delta' : 0.001,
-    'patience' : 10,
+    'min_delta' : 0.00001,
+    'patience' : 20,
 
 }
 
@@ -122,7 +123,19 @@ def train(model_name, model_params, model_args, pt_path, class_nb):
     print('------' + str(class_nb) + '------data_name:'+ data_name +'------model_name:'+ model_name_str)
     learn = ts_learner(dataloader, model, loss_func=nn.CrossEntropyLoss(), metrics=accuracy)
     start = time.time()
-    cbs = [fastai.callback.tracker.EarlyStoppingCallback(min_delta=model_args['min_delta'], patience=model_args['patience']), fastai.callback.tracker.SaveModelCallback(monitor='accuracy', fname=model_name_str, with_opt=True)]
+    # checkpoint_callback = ModelCheckpoint(
+    #     monitor='val_acc_node',
+    #     mode='max',
+    #     dirpath='./checkpoints',
+    #     filename= 'pretrain' + '-{epoch:02d}-{val_acc_node:.2f}',
+    #     save_top_k=3,
+    #     save_last=True,
+    # )
+    cbs = [
+        fastai.callback.tracker.EarlyStoppingCallback(min_delta=model_args['min_delta'], 
+        patience=model_args['patience']), 
+        fastai.callback.tracker.SaveModelCallback(monitor='accuracy', fname=model_name_str, with_opt=True),
+        ]
     learn.fit_one_cycle(model_args['epochs'], model_args['lr'], cbs=cbs)
     elapsed = time.time() - start
     # vals = get_max_acc(learn.recorder.values)
