@@ -19,7 +19,7 @@ parser.add_argument('--epoch', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=250)
 parser.add_argument('--num_workers', type=int, default=0)
 parser.add_argument('--shuffle', type=bool, default=True)
-parser.add_argument('--lr', type=float, default=0.001)
+parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--min_delta', type=float, default=0.00001)
 parser.add_argument('--patience', type=int, default=10)
 parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
@@ -183,7 +183,7 @@ class LightModel(pl.LightningModule):
 
 model = LightModel()
 dm = PretrainDatamodule()
-early_stop_callback = EarlyStopping(monitor="val_acc", min_delta=0.00, patience=3, verbose=False, mode="max")
+early_stop_callback = EarlyStopping(monitor="val_acc", min_delta=0.00, patience=args.patience, verbose=False, mode="max")
 exp_name = args.root_path.split('/')[-2] + '_lr_' + str(args.lr) + '_batch_size_' + str(args.batch_size)
 logger = pl.loggers.TensorBoardLogger('pretrain_logs', name=exp_name)
 trainer = pl.Trainer(
