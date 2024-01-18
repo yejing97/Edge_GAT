@@ -190,8 +190,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
             am = torch.where(edge_labels == 1, 1, 0)
             new_mask = torch.where(torch.sum(am, dim=1) !=0, 0, 1)
             mask = mask * new_mask
-            print(new_mask)
-            print(mask)
+
             # sym_mask,_ = self.connected_components_mask(am)
             # strokes_emb = self.sub_graph_pooling(strokes_emb, sym_mask)
 
