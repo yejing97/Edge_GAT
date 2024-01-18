@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 
 parser = argparse.ArgumentParser()
-# parser.add_argument('--root_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/S100_R5_Speed_False/')
+
 parser.add_argument('--root_path', type=str, default='/home/xie-y/data/Edge_GAT/S150_R10/')
 parser.add_argument('--stroke_emb_nb', type=int, default=150)
 parser.add_argument('--stroke_class_nb', type=int, default=102)
@@ -163,6 +163,7 @@ class LightModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         strokes_emb, strokes_label = batch
         strokes_emb = normalize_gaussian_node(strokes_emb)
+        print(strokes_emb.shape)
         output = self.model(strokes_emb.to(args.device))
         output = self.linear(output)
         output = self.softmax(output)
