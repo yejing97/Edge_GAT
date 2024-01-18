@@ -8,3 +8,4 @@ new_logs/
 checkpoints/
 results/
 lightning_logs/
+pretrain_logs/

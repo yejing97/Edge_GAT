@@ -13,7 +13,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 parser = argparse.ArgumentParser()
 # parser.add_argument('--root_path', type=str, default='/home/e19b516g/yejing/data/data_for_graph/S100_R5_Speed_False/')
 parser.add_argument('--root_path', type=str, default='/home/xie-y/data/Edge_GAT/S150_R10/')
-parser.add_argument('--stroke_emb_nb', type=int, default=100)
+parser.add_argument('--stroke_emb_nb', type=int, default=150)
 parser.add_argument('--stroke_class_nb', type=int, default=102)
 parser.add_argument('--epoch', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=250)
@@ -25,15 +25,60 @@ parser.add_argument('--patience', type=int, default=10)
 parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
 args = parser.parse_args()
 
+
+def connected_components_mask(adjacency_matrix):
+            adjacency_matrix = adjacency_matrix.cpu()
+            # batch_nb = adjacency_matrix.shape[0]
+            num_nodes = adjacency_matrix.shape[0]
+            visited = torch.zeros(num_nodes, dtype=bool)
+            def dfs(node, component):
+                visited[node] = True
+                component.append(node)
+                for neighbor in range(num_nodes):
+                    if adjacency_matrix[node][neighbor] == 1 and not visited[neighbor]:
+                        dfs(neighbor, component)
+            components = []
+            for node in range(num_nodes):
+                if not visited[node]:
+                    component = []
+                    dfs(node, component)
+                    components.append(component)
+            max_node = max(max(component) for component in components) + 1
+            mask = torch.zeros(len(components), max_node, dtype=torch.int)
+            for i, component in enumerate(components):
+                for node in component:
+                    mask[i][node] = 1
+            return mask, components
+    
+def sub_graph_pooling(node_feat, mask):
+    node_feat_repeat = node_feat.unsqueeze(0).repeat(mask.shape[0], 1,1,1)
+    node_out = torch.sum(node_feat_repeat * mask.unsqueeze(-1).unsqueeze(-1), dim=1)
+    node_out = node_out/mask.sum(dim=1).unsqueeze(-1).unsqueeze(-1)
+    node_out = torch.matmul(mask.t().float(), node_out.reshape(node_out.shape[0], -1))
+    node_out = node_out.reshape(node_feat.shape[0], node_feat.shape[1], -1)
+    return node_out
+
 def make_pt(npz_path, tgt_path, type):
-    X = torch.empty(0, 100, 2)
+    X = torch.empty(0, 150, 2)
     y = torch.empty(0)
-    for root, _, files in os.walk(os.path.join(npz_path, type)):
+    for root, dirs, files in os.walk(os.path.join(npz_path, type, 'strokes_emb')):
         for file in files:
-            if file.endswith('.npz'):
-                data = np.load(os.path.join(root, file))
-                strokes_emb = torch.from_numpy(data['strokes_emb']).float()
-                stroke_labels = torch.from_numpy(data['stroke_labels']).long()
+            if file.endswith('.npy'):
+                print(file)
+                # data = np.load(os.path.join(root, file))
+                strokes_emb = np.load(os.path.join(root, file))
+                strokes_emb = torch.from_numpy(strokes_emb).long()
+                stroke_labels = np.load(os.path.join(npz_path, type, 'stroke_labels', file))
+                stroke_labels = torch.from_numpy(stroke_labels).long()
+                edge_labels = np.load(os.path.join(npz_path, type, 'edge_labels', file))
+                edge_labels = torch.from_numpy(edge_labels).long()
+                am = torch.where(edge_labels == 1, 1, 0)
+                try:
+                    sym_mask,_ = connected_components_mask(am)
+                    strokes_emb = sub_graph_pooling(strokes_emb, sym_mask)
+                except:
+                    print(file + ' has error')
+
                 X = torch.cat((X, strokes_emb), dim=0)
                 y = torch.cat((y, stroke_labels), dim=0)
     torch.save(X, os.path.join(tgt_path, type + '_X.pt'))
@@ -50,6 +95,7 @@ def make_pt(npz_path, tgt_path, type):
 class PretrainDatamodule(pl.LightningDataModule):
     def __init__(self) -> None:
         super().__init__()
+        self.setup('train')
     
     def setup(self, stage: str) -> None:
         if os.path.isfile(os.path.join(args.root_path, 'train_X.pt')) and os.path.isfile(os.path.join(args.root_path, 'train_y.pt')):
@@ -81,7 +127,8 @@ class PretrainDatamodule(pl.LightningDataModule):
             self.dataset_train, 
             batch_size = args.batch_size, 
             shuffle = args.shuffle, 
-            num_workers = args.num_workers)
+            num_workers = args.num_workers
+            )
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
@@ -100,23 +147,29 @@ class PretrainDatamodule(pl.LightningDataModule):
 class LightModel(pl.LightningModule):
     def __init__(self) -> None:
         super().__init__()
-        self.model = XceptionTime(args.stroke_emb_nb, args.stroke_class_nb)
+        self.model = XceptionTime(args.stroke_emb_nb, 384)
+        self.linear = torch.nn.Linear(384, args.stroke_class_nb)
+        self.softmax = torch.nn.Softmax(dim = -1)
         self.loss = torch.nn.CrossEntropyLoss()
 
     def training_step(self, batch, batch_idx):
         strokes_emb, strokes_label = batch
         output = self.model(strokes_emb.to(args.device))
+        output = self.linear(output)
+        output = self.softmax(output)
         loss = self.loss(output, strokes_label.to(args.device).long())
-        self.log('train_loss', loss)
+        self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
         return loss 
     
     def validation_step(self, batch, batch_idx):
         strokes_emb, strokes_label = batch
         output = self.model(strokes_emb.to(args.device))
+        output = self.linear(output)
+        output = self.softmax(output)
         loss = self.loss(output, strokes_label.to(args.device).long())
         acc = accuracy_score(strokes_label.cpu().numpy(), output.cpu().argmax(dim=1).numpy())
-        self.log('val_loss', loss)
-        self.log('val_acc', acc)
+        self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
         return loss
     
     def configure_optimizers(self):
@@ -131,6 +184,7 @@ class LightModel(pl.LightningModule):
 
 model = LightModel()
 dm = PretrainDatamodule()
+dm.setup('train')
 early_stop_callback = EarlyStopping(monitor="val_acc", min_delta=0.00, patience=3, verbose=False, mode="max")
 exp_name = args.root_path.split('/')[-2] + '_lr_' + str(args.lr) + '_batch_size_' + str(args.batch_size)
 logger = pl.loggers.TensorBoardLogger('pretrain_logs', name=exp_name)
