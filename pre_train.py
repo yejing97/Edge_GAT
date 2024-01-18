@@ -95,7 +95,6 @@ def make_pt(npz_path, tgt_path, type):
 class PretrainDatamodule(pl.LightningDataModule):
     def __init__(self) -> None:
         super().__init__()
-        self.setup('train')
     
     def setup(self, stage: str) -> None:
         if os.path.isfile(os.path.join(args.root_path, 'train_X.pt')) and os.path.isfile(os.path.join(args.root_path, 'train_y.pt')):
