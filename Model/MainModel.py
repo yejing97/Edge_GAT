@@ -126,6 +126,7 @@ class MainModel(pl.LightningModule):
 
         if mode == 'pre_train':
             self.node_emb = XceptionTime(node_input_size, node_class_nb)
+            self.edge_emb = Edge_emb(edge_emb_parm, dropout)
             # self.linear = torch.nn.Linear(node_gat_parm[0], node_class_nb)
             # self.pre_bn = torch.nn.BatchNorm1d(node_class_nb)
             # self.softmax = torch.nn.Softmax(dim=-1)
@@ -169,11 +170,12 @@ class MainModel(pl.LightningModule):
     def forward(self, node_in_features, edge_in_features, adj_mat):
         if self.mode == 'pre_train':
             node_out = self.node_emb(node_in_features.squeeze(0))
+            edge_out = self.edge_emb(edge_in_features)
             # node_out = self.linear(node_out)
             # node_out = self.pre_bn(node_out)
             # node_out = self.softmax(node_out)
 
-            return node_out
+            return node_out, edge_out
         else:
             node_emb_feat = self.node_emb(node_in_features)
             edge_emb_feat = self.edge_emb(edge_in_features)
