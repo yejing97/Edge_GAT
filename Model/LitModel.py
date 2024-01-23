@@ -5,7 +5,7 @@ import yaml
 import pytorch_lightning as pl
 from tsai.all import *
 # from labml_nn.graphs.gat import GraphAttentionLayer
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score
 from collections import OrderedDict
 
 # import sys
@@ -215,30 +215,31 @@ class LitModel(pl.LightningModule):
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
             # print(torch.where(edges_label == 0, 1, 0).sum())
+
+            loss_edge = self.loss_edge(edge_hat, edges_label)
+            loss_node = self.loss_node(node_hat, strokes_label)
+            loss = self.lambda1*loss_node + self.lambda2 * loss_edge
+            self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
+
+            acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+            acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+            self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
+            self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
+            self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
+            self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
+            self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
+
+            return acc_node
         except:
             print('error with batch ' + str(batch_idx))
             return
-        loss_edge = self.loss_edge(edge_hat, edges_label)
-        loss_node = self.loss_node(node_hat, strokes_label)
-        loss = self.lambda1*loss_node + self.lambda2 * loss_edge
-        self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
-
-        acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
-        acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-        self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
-        self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
-        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
-        self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
-
-        return acc_node
     def test_step(self, batch, batch_idx):
         # try:
         strokes_emb, edges_emb, los, strokes_label, edges_label, mask, name = self.load_batch(batch)
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         try:
             edge_hat_save, edges_label_save = self.edge_mask(edge_hat, edges_label, los)
-            torch.save([node_hat, edge_hat_save,strokes_label, edges_label_save], os.path.join(self.results_path, 'test',name[0].split('.')[0] + '.pt'))
+            torch.save([node_hat, edge_hat_save,strokes_label, edges_label_save, los], os.path.join(self.results_path, 'test',name[0].split('.')[0] + '.pt'))
         except:
             print('error with ' + str(name))
             return
@@ -249,8 +250,13 @@ class LitModel(pl.LightningModule):
         # edge_hat = edge_hat.reshape(-1, edge_hat.shape[-1])
         acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+        prec_node = precision_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy(),average='weighted')
+        prec_edge = precision_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy(),average='weighted')
+
         self.log('test_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_prec_node', prec_node, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_prec_edge', prec_edge, on_epoch=True, prog_bar=True, logger=True)
         if acc_node > 0.98:
             self.node_correct += 1
         if acc_edge == 1:

@@ -1,6 +1,8 @@
 import torch
 import os
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+
 
 def load_pt(path):
     pt = torch.load(path, map_location=torch.device('cpu'))
@@ -8,7 +10,8 @@ def load_pt(path):
     edge_emb = pt[1]
     stroke_label = pt[2]
     edge_label = pt[3]
-    return stroke_emb, edge_emb, stroke_label, edge_label
+    los = pt[4]
+    return stroke_emb, edge_emb, stroke_label, edge_label, los
 
 def remove_extra_class(edge_pred):
     for i in range(edge_pred.shape[0]):
@@ -71,6 +74,12 @@ def stroke2sym(node_label, componets):
     for i in range(len(componets)):
         j = componets[i][0]
         new_label[i] = node_label[j]
+    return new_label
+def sym2stroke(node_label, componets, nb):
+    new_label = torch.zeros(nb)
+    for i in range(len(componets)):
+        for j in range(len(componets[i])):
+            new_label[componets[i][j]] = node_label[i]
     return new_label
 
 def lg2symlg(edge_label,componets):
@@ -172,7 +181,21 @@ def add_lost(edge_pred):
                     edge_pred[i,j] = 2
                     break
     return edge_pred
-
+def edge_filter(edges_pred, edges_label, los):
+        # print(los)
+        # return
+        edges_pred = edges_pred.reshape(-1)
+        edges_label = edges_label.reshape(-1)
+        edges_label = torch.where(edges_label < 14, edges_label, 0)
+        try:
+            los = los.squeeze().fill_diagonal_(0)
+            los = torch.triu(los)
+        except:
+            los = torch.zeros(0)
+        indices = torch.nonzero(los.reshape(-1)).squeeze().reshape(-1)
+        edges_label = edges_label[indices]
+        edges_pred = edges_pred[indices]
+        return edges_pred, edges_label
         
 
 if __name__ == '__main__':
@@ -183,33 +206,59 @@ if __name__ == '__main__':
     error = 0
     all_node_pred = torch.zeros(0)
     all_node_label = torch.zeros(0)
+    all_edge_pred = torch.zeros(0)
+    all_edge_label = torch.zeros(0)
     for root, _, files in os.walk(results_path):
         for file in files:
             if file.endswith('.pt'):
                 path = os.path.join(root, file)
-                stroke_emb, edge_emb, stroke_label, edge_label = load_pt(path)
+                stroke_emb, edge_emb, stroke_label, edge_label, los = load_pt(path)
                 am = torch.where(edge_label == 1, 1, 0)
                 # am = torch.where(torch.argmax(edge_emb, dim=2) == 1, 1, 0)
-                mask, componets = connected_components_mask(am)
-                # node_out, edge_out = sub_graph_pooling(stroke_emb, edge_emb, mask)
-                edge_label = remove_extra_class(edge_label)
-                edge_pred = torch.argmax(edge_emb, dim=2)
-                edge_pred = remove_extra_class(edge_pred)
-                edge_pred = remove_repeat(edge_pred)
-                edge_pred = add_lost(edge_pred)
+                try:
+                    mask, componets = connected_components_mask(am)
+                    node_out, edge_out = sub_graph_pooling(stroke_emb, edge_emb, mask)
+                    edge_label = remove_extra_class(edge_label)
+                    edge_pred = torch.argmax(edge_out, dim=2)
+                    edge_pred = remove_extra_class(edge_pred)
+                    edge_pred = remove_repeat(edge_pred)
+                    edge_pred = add_lost(edge_pred)
+                    node_pred = torch.argmax(stroke_emb, dim=1)
+                    edge_label = lg2symlg(edge_label, componets)
+                except:
+                    print(path)
+                    edge_label = edge_label.reshape(-1)
+                    edge_pred = torch.argmax(edge_emb, dim=2)
+                    # all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
+                    # all_edge_pred = torch.concat((all_edge_label, edge_pred.reshape(-1)))
+                edge_pred, edge_label = edge_filter(edge_pred,edge_label, los)
+                if edge_label.reshape(-1).shape == edge_pred.reshape(-1).shape:
+                    all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
+                    all_edge_pred = torch.concat((all_edge_pred, edge_pred.reshape(-1)))
+
+
+
+
+                # node_pred = sym2stroke(node_pred, componets, mask.shape[1])
                 # stroke_label = stroke2sym(stroke_label, componets)
+
                 # try:
                 #     edge_label = lg2symlg(edge_label, componets)
-                #     node_pred = torch.argmax(node_out, dim=1)
+                #     all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
+                #     # node_pred = torch.argmax(node_out, dim=1)
+
 
                 # except:
                 #     print(path)
-                #     node_pred = torch.argmax(stroke_emb, dim=1)
+                    
+                #     all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
+                #     # node_pred = torch.argmax(stroke_emb, dim=1)
                 #     error += 1
-
+                #     edge_pred = 
+                #     all_edge_pred = torch.concat((all_edge_label, edge_pred.reshape(-1)))
                 mask_pred = torch.where(edge_pred == 0, 0, 1)
                 mask_label = torch.where(edge_label == 0, 0, 1)
-                node_pred = torch.argmax(stroke_emb, dim=1)
+
                 if torch.equal(node_pred, stroke_label) and torch.equal(edge_pred, edge_label):
                     all_correct += 1
                 if torch.equal(edge_pred, edge_label):
@@ -220,7 +269,8 @@ if __name__ == '__main__':
                 all_node_label = torch.concat((all_node_label, stroke_label))
                 all_node_pred = torch.concat((all_node_pred, node_pred))
 
-    print(accuracy_score(all_node_label, all_node_pred))
+    print(accuracy_score(all_edge_label, all_edge_pred))
+    print(precision_score(all_edge_label, all_edge_pred, average='weighted'))
                 # else:
                     #  print(edge_pred, edge_label)
 
