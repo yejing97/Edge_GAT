@@ -156,50 +156,50 @@ class LitModel(pl.LightningModule):
     
     
     def training_step(self, batch, batch_idx):
-        # try:
-        strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
-        # if self.mode == 'pre_train':
-        #     # los = self.am_for_pretrain(edges_label, los)
-        #     # return
-        #     node_hat= self.model(strokes_emb, edges_emb, los)
-        #     node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
-        #     loss_node = self.loss_node(node_hat, strokes_label)
-        #     self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
-        #     return loss_node
-        # else:
-        node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
-        # try:
-            # print(torch.where(edges_label == 0, 1, 0).sum())
-        node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
-        edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
+        try:
+            strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
+            # if self.mode == 'pre_train':
+            #     # los = self.am_for_pretrain(edges_label, los)
+            #     # return
+            #     node_hat= self.model(strokes_emb, edges_emb, los)
+            #     node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
+            #     loss_node = self.loss_node(node_hat, strokes_label)
+            #     self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+            #     return loss_node
+            # else:
+            node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
+            # try:
+                # print(torch.where(edges_label == 0, 1, 0).sum())
+            node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
+            edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
 
-        loss_edge = self.loss_edge(edge_hat, edges_label)
+            loss_edge = self.loss_edge(edge_hat, edges_label)
 
-        loss_node = self.loss_node(node_hat, strokes_label)
-        # loss_edge = self.loss_edge(edge_hat, edges_label)
-        loss = self.lambda1*loss_node + self.lambda2 * loss_edge
+            loss_node = self.loss_node(node_hat, strokes_label)
+            # loss_edge = self.loss_edge(edge_hat, edges_label)
+            loss = self.lambda1*loss_node + self.lambda2 * loss_edge
 
-        
+            
 
-        if self.mode == 'pre_train':
-            self.log('train_loss', loss_edge, on_epoch=True, prog_bar=True, logger=True)
-        else:
-            self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
-            self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
-            self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
-        return loss
-            # except:
-            #     print('error with batch ' + str(batch_idx))
-            #     return
+            if self.mode == 'pre_train':
+                self.log('train_loss', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+            else:
+                self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+                self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+                self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+            return loss
+        except:
+            print('error with batch ' + str(batch_idx))
+            return
     
     def validation_step(self, batch, batch_idx):
-        # try:
-        strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
+        try:
+            strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
 
-        # except:
-        #     print('error with batch ' + str(batch_idx))
-        #     print('stroke_emb', batch[0].shape)
-        #     return
+        except:
+            print('error with batch ' + str(batch_idx))
+            print('stroke_emb', batch[0].shape)
+            return
         # if self.mode == 'pre_train':
         #     # los = self.am_for_pretrain(edges_label, los)
         #     node_hat= self.model(strokes_emb, edges_emb, los)
