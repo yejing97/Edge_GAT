@@ -179,10 +179,14 @@ class LitModel(pl.LightningModule):
         # loss_edge = self.loss_edge(edge_hat, edges_label)
         loss = self.lambda1*loss_node + self.lambda2 * loss_edge
 
-        self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
-        self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
-        self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+        
 
+        if self.mode == 'pre_train':
+            self.log('train_loss', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+        else:
+            self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
+            self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+            self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
             # except:
             #     print('error with batch ' + str(batch_idx))
