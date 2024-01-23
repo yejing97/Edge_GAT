@@ -12,10 +12,10 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config_name', type=str, default = 'edge_class14')
-parser.add_argument('--mode', type=str, default='pre_train')
+parser.add_argument('--config_name', type=str, default = 'paper/geofeat')
+parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--results_path', type=str, default='val_results')
-parser.add_argument('--logs_path', type=str, default='new_logs')
+parser.add_argument('--logs_path', type=str, default='logs/paper')
 
 args = parser.parse_args()
 args = vars(parser.parse_args())

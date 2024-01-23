@@ -71,7 +71,9 @@ class LitModel(pl.LightningModule):
             gat_heads_parm = config['gat_heads_parm'],
             node_readout=config['node_readout'],
             edge_readout=config['edge_readout'],
-            dropout = config['dropout'],)
+            dropout = config['dropout'],
+            mode=mode
+            )
     
     def load_ckpt(self, ckpt_path):
         ckpt = torch.load(ckpt_path, map_location=self.d)

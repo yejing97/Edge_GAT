@@ -1,5 +1,6 @@
 import torch
 import os
+from sklearn.metrics import accuracy_score
 
 def load_pt(path):
     pt = torch.load(path, map_location=torch.device('cpu'))
@@ -180,33 +181,46 @@ if __name__ == '__main__':
     structure_correct = 0
     all_correct = 0
     error = 0
+    all_node_pred = torch.zeros(0)
+    all_node_label = torch.zeros(0)
     for root, _, files in os.walk(results_path):
         for file in files:
             if file.endswith('.pt'):
                 path = os.path.join(root, file)
                 stroke_emb, edge_emb, stroke_label, edge_label = load_pt(path)
-                mask, componets = connected_components_mask(edge_label)
-                node_out, edge_out = sub_graph_pooling(stroke_emb, edge_emb, mask)
+                am = torch.where(edge_label == 1, 1, 0)
+                # am = torch.where(torch.argmax(edge_emb, dim=2) == 1, 1, 0)
+                mask, componets = connected_components_mask(am)
+                # node_out, edge_out = sub_graph_pooling(stroke_emb, edge_emb, mask)
                 edge_label = remove_extra_class(edge_label)
-                edge_pred = torch.argmax(edge_out, dim=2)
+                edge_pred = torch.argmax(edge_emb, dim=2)
                 edge_pred = remove_extra_class(edge_pred)
                 edge_pred = remove_repeat(edge_pred)
                 edge_pred = add_lost(edge_pred)
-                stroke_label = stroke2sym(stroke_label, componets)
-                try:
-                    edge_label = lg2symlg(edge_label, componets)
-                except:
-                    print(path)
-                    error += 1
+                # stroke_label = stroke2sym(stroke_label, componets)
+                # try:
+                #     edge_label = lg2symlg(edge_label, componets)
+                #     node_pred = torch.argmax(node_out, dim=1)
+
+                # except:
+                #     print(path)
+                #     node_pred = torch.argmax(stroke_emb, dim=1)
+                #     error += 1
+
                 mask_pred = torch.where(edge_pred == 0, 0, 1)
                 mask_label = torch.where(edge_label == 0, 0, 1)
-                node_pred = torch.argmax(node_out, dim=1)
+                node_pred = torch.argmax(stroke_emb, dim=1)
                 if torch.equal(node_pred, stroke_label) and torch.equal(edge_pred, edge_label):
                     all_correct += 1
                 if torch.equal(edge_pred, edge_label):
                     structure_correct += 1
                 if torch.equal(node_pred, stroke_label):
                     edge_correct += 1
+                
+                all_node_label = torch.concat((all_node_label, stroke_label))
+                all_node_pred = torch.concat((all_node_pred, node_pred))
+
+    print(accuracy_score(all_node_label, all_node_pred))
                 # else:
                     #  print(edge_pred, edge_label)
 

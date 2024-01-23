@@ -111,7 +111,7 @@ class MainModel(pl.LightningModule):
             node_class_nb: int,
             edge_class_nb: int,
             dropout: float,
-            mode: str = 'pre_train',
+            mode: str,
             ) -> None:
         super().__init__()
         self.softmax1 = torch.nn.Softmax(dim=1)

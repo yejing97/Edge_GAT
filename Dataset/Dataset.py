@@ -7,7 +7,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
     def __init__(self, data_type, root_path, batch_size, max_node, random_padding_size, am_type, node_type):
         super().__init__()
         print('random_padding_size: ', data_type, random_padding_size)
-        self.mode = 'pre_train'
+        # self.mode = 'pre_train'
         self.max_node = max_node
         self.am_type = am_type
         self.pad = random_padding_size
@@ -21,10 +21,12 @@ class CROHMEDataset(torch.utils.data.Dataset):
         self.sub_eq_list = self.make_list()
         self.node_emb_nb = int(root_path.split('/')[-1].split('_')[0].split('S')[1])
         # self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1])
-        if root_path.split('/')[-1].split('_')[1] == 'geo_feat':
-            self.rel_emb_nb = 20
-        else:
+        # print(root_path)
+        if root_path.split('/')[-1].split('_')[1] == 'R10':
             self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1]) *4
+        else:
+            self.rel_emb_nb = 20
+
 
     def make_data_list(self, max_node):
         if max_node == -1:

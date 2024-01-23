@@ -14,9 +14,9 @@ class CROHMEDatamodule(pl.LightningDataModule):
         self.num_workers = config['num_workers']
         self.batch_size = config['batch_size']
         self.max_node = config['max_node']
-        self.am_type = config['am_type']
+        self.am_type = 'los'
         # self.node_norm = config['node_norm']
-        self.node_type = config['node_type']
+        self.node_type = 'norm'
         self.max_padding_size = int(self.max_node//2)
         # self.train = 'train'
         # self.val = 'val'
@@ -49,7 +49,7 @@ class CROHMEDatamodule(pl.LightningDataModule):
     def val_dataloader(self):
         # self.setup('fit')
         # self.random_padding_size = random.randint(0, 3)
-        self.dataset_val = CROHMEDataset('test', self.root_path, self.batch_size, self.max_node, self.random_padding_size, self.am_type, self.node_type)
+        self.dataset_val = CROHMEDataset('val', self.root_path, self.batch_size, self.max_node, self.random_padding_size, self.am_type, self.node_type)
         return torch.utils.data.DataLoader(
             self.dataset_val, 
             # batch_size = self.batch_size,
