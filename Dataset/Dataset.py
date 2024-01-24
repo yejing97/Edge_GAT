@@ -23,7 +23,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         # self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1])
         # print(root_path)
         if root_path.split('/')[-1].split('_')[1] == 'R10':
-            self.rel_emb_nb = int(root_path.split('/')[-1].split('_')[1].split('R')[1]) *4
+            self.rel_emb_nb = 40
         else:
             self.rel_emb_nb = 20
 
