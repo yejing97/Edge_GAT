@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config_name', type=str, default = 'paper/baseline')
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--results_path', type=str, default='val_results')
-parser.add_argument('--logs_path', type=str, default='logs/paper')
+parser.add_argument('--logs_path', type=str, default='logs/paper/multi_train/maxnode_4')
 
 args = parser.parse_args()
 args = vars(parser.parse_args())
@@ -90,6 +90,7 @@ if __name__ == '__main__':
         gpus= 1,
         logger=logger,
         reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'],callbacks=[checkpoint_callback])
+
         # ['reload_dataloaders_every_n_epochs'])
         #     trainer = pl.Trainer(max_epochs = cfg['epoch'], gpus= 1,logger=logger)
         #     trainer.fit(model.to(device), dm)

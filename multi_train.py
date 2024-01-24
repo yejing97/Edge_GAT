@@ -35,6 +35,7 @@ if __name__ == '__main__':
         for file in files:
             if file.split('.')[1] == 'yaml':
                 config = os.path.join(root, file)
+                print(config)
                 with open(os.path.join(root, file), 'r') as f:
                     cfg = yaml.safe_load(f)
                 stroke_emb_nb = cfg['stroke_emb_nb']
@@ -87,5 +88,5 @@ if __name__ == '__main__':
                     auto_select_gpus=True, 
                     gpus= 1,
                     logger=logger,
-                    reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'],callbacks=[checkpoint_callback])
+                    reload_dataloaders_every_n_epochs=cfg['reload_dataloaders_every_n_epochs'])
                 trainer.fit(model.to(device), dm)
