@@ -12,7 +12,7 @@ import os
 import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--list', type=list, default=['sym_emb', 'rel_emb'])
+parser.add_argument('--list', type=list, default=['rel_emb'])
 parser.add_argument('--parallel', type=bool, default=True)
 parser.add_argument('--tag', type=str, default='test')
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     inkml_path = os.path.join(root_path, 'INKML')
     S = [150]
     for s in S:
-        npz_name = 'S'+ str(s) + '_R10'
+        npz_name = 'S'+ str(s) + '_geo_feat'
         npz_path = os.path.join(root_path, npz_name)
         if args.parallel:
             core_nb = multiprocessing.cpu_count() - 5
