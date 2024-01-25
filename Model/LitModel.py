@@ -173,7 +173,6 @@ class LitModel(pl.LightningModule):
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
 
-            return
 
             loss_edge = self.loss_edge(edge_hat, edges_label)
 
