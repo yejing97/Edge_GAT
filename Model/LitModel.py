@@ -182,7 +182,7 @@ class LitModel(pl.LightningModule):
             
 
             if self.mode == 'pre_train':
-                self.log('train_loss', loss_edge, on_epoch=True, prog_bar=True, logger=True)
+                self.log('train_loss', loss_node, on_epoch=True, prog_bar=True, logger=True)
             else:
                 self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
                 self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)

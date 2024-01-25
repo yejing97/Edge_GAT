@@ -11,8 +11,8 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--checkpoint_name', type=str, default = 'geofeat')
-parser.add_argument('--config_name', type=str, default='paper/geofeat')
+parser.add_argument('--checkpoint_name', type=str, default = 'maxnode_14')
+parser.add_argument('--config_name', type=str, default='paper/multi_train/maxnode_14')
  
 args = parser.parse_args()
 args = vars(parser.parse_args())
@@ -32,9 +32,9 @@ if __name__ == '__main__':
             checkpoint_path = '/home/e19b516g/yejing/code/Edge_GAT/checkpoints/'
 
         stroke_emb_nb = 150
-        rel_emb_nb = 20
+        rel_emb_nb = 40
         # npz_name = 'S'+ str(args.stroke_emb_nb) + '_R' + str(args.rel_emb_nb) + '_Speed_' + str(args.speed) + '_' + str(args.norm)
-        npz_name = 'S'+ str(stroke_emb_nb) + '_geo_feat'
+        npz_name = 'S'+ str(stroke_emb_nb) + '_R10'
     
         npz_path = os.path.join(data_path, npz_name)
     
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         model = LitModel.load_from_checkpoint(
             os.path.join(checkpoint_path, args['checkpoint_name'] + '.ckpt'),
             config_path = config_path,
-            results_path = './results/geofeat',
+            results_path = './results/maxnode_14',
             mode = 'train'
             )
         
