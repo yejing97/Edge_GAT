@@ -172,8 +172,7 @@ class LitModel(pl.LightningModule):
                 # print(torch.where(edges_label == 0, 1, 0).sum())
             node_hat, strokes_label = self.node_mask(node_hat, strokes_label, mask)
             edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-            print(edge_hat.shape)
-            print(edges_label.shape)
+
             return
 
             loss_edge = self.loss_edge(edge_hat, edges_label)
