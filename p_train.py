@@ -3,6 +3,7 @@ import os
 from tsai.all import *
 import argparse
 from pytorch_lightning.callbacks import ModelCheckpoint
+from Model.MainModel import Edge_emb
 # import load
 # import make_pt
 # import normalization
@@ -16,7 +17,7 @@ model_args = {
     'device': 'cuda' if torch.cuda.is_available() else 'cpu',
     'class_nb_edge': 8,
     'class_nb_node': 102,
-    'epochs': 100,
+    'epochs': 16,
     'lr': args.lr,
     'batch_size': args.batch_size,
     'min_delta' : 0.00001,
@@ -97,12 +98,19 @@ model_args = {
 #             acc_max = acc
 #             epoch = i
 #     return values[epoch]
+class Edge_emb_softmax(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.edge_emb = Edge_emb([40,384,14],0.2)
+        self.softmax= torch.nn.Softmax()
+    def forward(self,x):
+        x = self.edge_emb(x).reshape(-1,14)
+        return self.softmax(x)
+
+
 
 def train(model_name, model_params, model_args, pt_path, class_nb):
-    # if edge_c == 'node':
     data_name = pt_path.split('/')[-1]
-    # csv_path = data_args['csv_path']
-    # X, y = load_data(pt_path, edge_c)
     y = torch.load(os.path.join(pt_path, 'train_y.pt')).long()
     X = torch.load(os.path.join(pt_path, 'train_X.pt'))
     datasets_train = TSDatasets(X.float(), y)
@@ -110,75 +118,31 @@ def train(model_name, model_params, model_args, pt_path, class_nb):
     val_X = torch.load(os.path.join(pt_path, 'val_X.pt'))
     datasets_train = TSDatasets(X.float(), y)
     datasets_val = TSDatasets(val_X.float(), val_y)
-
+    print(X.shape)
+    print(y.shape)
     dataloader = TSDataLoaders.from_dsets(datasets_train, datasets_val, bs=model_args['batch_size'], num_workers=0)
-    # for model_name in model_type:
-    # for (model_name, model_params) in model_type:
-    if model_name == xresnet1d18:
-        model_name_str = 'xresnet1d18'
-        model = xresnet1d18(c_in = X.shape[-2], c_out = class_nb).to(model_args['device'])
+    if model_name == 'edge':
+        softmax = torch.nn.Softmax(dim=-1)
+        model = Edge_emb_softmax().to(model_args['device'])
     else:
         model_name_str = str(model_name).split('.')[-2]
         model = create_model(model_name, dls = dataloader, c_in = X.shape[-2], c_out = class_nb, **model_params).to(model_args['device'])
-    print('------' + str(class_nb) + '------data_name:'+ data_name +'------model_name:'+ model_name_str)
+    # print('------' + str(class_nb) + '------data_name:'+ data_name +'------model_name:'+ model_name_str)
     learn = ts_learner(dataloader, model, loss_func=nn.CrossEntropyLoss(), metrics=accuracy)
-    start = time.time()
-    # checkpoint_callback = ModelCheckpoint(
-    #     monitor='val_acc_node',
-    #     mode='max',
-    #     dirpath='./checkpoints',
-    #     filename= 'pretrain' + '-{epoch:02d}-{val_acc_node:.2f}',
-    #     save_top_k=3,
-    #     save_last=True,
-    # )
     cbs = [
         fastai.callback.tracker.EarlyStoppingCallback(min_delta=model_args['min_delta'], 
         patience=model_args['patience']), 
-        fastai.callback.tracker.SaveModelCallback(monitor='accuracy', fname=model_name_str, with_opt=True),
+        fastai.callback.tracker.SaveModelCallback(monitor='accuracy', fname='edge', with_opt=True),
         ]
     learn.fit_one_cycle(model_args['epochs'], model_args['lr'], cbs=cbs)
-    elapsed = time.time() - start
-    # vals = get_max_acc(learn.recorder.values)
-    # results.loc[i] = [data_name, model_name_str, count_parameters(model), vals[0], vals[1], vals[2], int(elapsed)]
-    # i = i + 1
-    # values_df = pd.DataFrame(learn.recorder.values, columns=['train_loss', 'valid_loss', 'accuracy'])
-    # values_df.to_csv(os.path.join(csv_path, str(data_namee) + '_' + model_name_str + '.csv'))
+    torch.save(model.state_dict(), './models/node.pth')
 
 
-# def benchmark(model_type, model_args, data_args):
-#     # prepare_data(data_args)
-#     results_node = pd.DataFrame(columns=['data_type', 'model_type', 'total params', 'train loss', 'valid loss', 'accuracy', 'time'])
-#     results_edge = pd.DataFrame(columns=['data_type', 'model_type', 'total params', 'train loss', 'valid loss', 'accuracy', 'time'])
-#     i = 0
-#     j = 0
-#     for nb in data_args['norm_nb']:
-#         for norm in data_args['norm_type']:
-#             for speed in data_args['speed_norm']:
-#                 pt_name = str(nb) + '_' + norm.__name__ + '_' + speed.__name__
-#                 new_tgt_path = os.path.join(data_args['pt_path'],pt_name)
-#                 # try:
-#                 for (model_name, model_params) in model_type:
-#                     train(model_name, model_params, model_args, new_tgt_path, model_args['class_nb_node'], 'node', results_node, i)
-#                     i = i + 1
-#                     for edge_c in data_args['edge_combination']:
-#                         train(model_name, model_params, model_args, new_tgt_path, model_args         ['class_nb_edge'],edge_c , results_edge, j)
-#                         j = j + 1
-#                 # except:
-#                 #     print('error:' + pt_name)
-#                 #     continue
-#     try:
-#         results_node.sort_values(by='accuracy', ascending=False, kind='stable', ignore_index=True, inplace=True)
-#         results_node.to_csv(os.path.join(data_args['csv_path'], ' node_results.csv'))
-#         results_edge.sort_values(by='accuracy', ascending=False, kind='stable', ignore_index=True, inplace=True)
-#         results_edge.to_csv(os.path.join(data_args['csv_path'], ' edge_results.csv'))
-#     except:
-#         print('csv error')
+def test(pt_path):
+    test_y = torch.load(os.path.join(pt_path, 'test_y.pt')).long()
+    test_X = torch.load(os.path.join(pt_path, 'test_X.pt'))
 
-
-
-
-# prepare_data(data_args)
-# benchmark(model_type, model_args, data_args)
-root_path = '/home/xie-y/data/Edge_GAT/S150_R10/'
-# root_path = '/home/e19b516g/yejing/data/data_for_graph/S150_R10'
-train(model_name=XceptionTime ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, args.type), class_nb=102)
+# root_path = '/home/xie-y/data/Edge_GAT/S150_R10/'
+root_path = '/home/e19b516g/yejing/data/data_for_graph/S150_R10'
+# train(model_name=XceptionTime ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, args.type), class_nb=102)
+train(model_name='edge' ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, 'alledge'), class_nb=14)

@@ -132,7 +132,8 @@ class MainModel(pl.LightningModule):
             # self.pre_bn = torch.nn.BatchNorm1d(node_class_nb)
             # self.softmax = torch.nn.Softmax(dim=-1)
         else:
-            self.node_emb = XceptionTime(150, node_gat_parm[0])
+            # self.node_emb = XceptionTime(150, node_gat_parm[0])
+            self.node_emb = TransformerModel(150, node_gat_parm[0])
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
             # for param in self.edge_emb.parameters():
             #     param.requires_grad = False
