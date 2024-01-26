@@ -132,8 +132,9 @@ class MainModel(pl.LightningModule):
             # self.pre_bn = torch.nn.BatchNorm1d(node_class_nb)
             # self.softmax = torch.nn.Softmax(dim=-1)
         else:
-            # self.node_emb = XceptionTime(150, node_gat_parm[0])
-            self.node_emb = TransformerModel(2, node_gat_parm[0])
+            # self.node_emb = XceptionTime(2, node_gat_parm[0])
+            self.node_emb = torch.nn.LSTM(2, int(node_gat_parm[0]/2),50, bidirectional = True)
+            # self.node_emb = TransformerModel(2, node_gat_parm[0])
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
             # for param in self.edge_emb.parameters():
             #     param.requires_grad = False
@@ -179,7 +180,7 @@ class MainModel(pl.LightningModule):
 
             return node_out, edge_out.reshape(-1,edge_out.shape[2])
         else:
-            node_emb_feat = self.node_emb(node_in_features.transpose(1, 2))
+            node_emb_feat = self.node_emb(node_in_features)[:,-1,:]
             edge_emb_feat = self.edge_emb(edge_in_features)
             node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
             # print('node_gat_feat', node_gat_feat.shape)
