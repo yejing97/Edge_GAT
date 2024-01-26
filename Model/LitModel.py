@@ -156,7 +156,7 @@ class LitModel(pl.LightningModule):
     
     
     def training_step(self, batch, batch_idx):
-        try:
+        # try:
             strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)
             # if self.mode == 'pre_train':
             #     # los = self.am_for_pretrain(edges_label, los)
@@ -189,9 +189,9 @@ class LitModel(pl.LightningModule):
                 self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
                 self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
             return loss
-        except:
-            print('error with batch ' + str(batch_idx))
-            return
+        # except:
+        #     print('error with batch ' + str(batch_idx))
+        #     return
     
     def validation_step(self, batch, batch_idx):
         try:
