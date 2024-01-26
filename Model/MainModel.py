@@ -180,7 +180,8 @@ class MainModel(pl.LightningModule):
 
             return node_out, edge_out.reshape(-1,edge_out.shape[2])
         else:
-            node_emb_feat = self.node_emb(node_in_features)[:,-1,:]
+            node_emb_feat,_ = self.node_emb(node_in_features)
+            node_emb_feat = node_emb_feat[:,-1,:]
             edge_emb_feat = self.edge_emb(edge_in_features)
             node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
             # print('node_gat_feat', node_gat_feat.shape)
