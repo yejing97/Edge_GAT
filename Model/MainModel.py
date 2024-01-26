@@ -133,7 +133,7 @@ class MainModel(pl.LightningModule):
             # self.softmax = torch.nn.Softmax(dim=-1)
         else:
             # self.node_emb = XceptionTime(2, node_gat_parm[0])
-            self.node_emb = torch.nn.LSTM(2, int(node_gat_parm[0]/2),10, bidirectional = True)
+            self.node_emb = torch.nn.LSTM(2, int(node_gat_parm[0]/2),2, bidirectional = True)
             # self.node_emb = TransformerModel(2, node_gat_parm[0])
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
             # for param in self.edge_emb.parameters():
