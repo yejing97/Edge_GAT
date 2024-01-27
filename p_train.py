@@ -143,7 +143,7 @@ def test(pt_path):
     test_y = torch.load(os.path.join(pt_path, 'test_y.pt')).long()
     test_X = torch.load(os.path.join(pt_path, 'test_X.pt'))
 
-# root_path = '/home/xie-y/data/Edge_GAT/S150_R10/'
-root_path = '/home/e19b516g/yejing/data/data_for_graph/S150_R10'
+root_path = '/home/xie-y/data/Edge_GAT/S150_R10/'
+# root_path = '/home/e19b516g/yejing/data/data_for_graph/S150_R10'
 train(model_name=XceptionTime ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, args.type), class_nb=102)
 # train(model_name='edge' ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, 'alledge'), class_nb=14)
