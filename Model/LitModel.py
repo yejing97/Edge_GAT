@@ -224,13 +224,14 @@ class LitModel(pl.LightningModule):
 
             acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
             acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+            avg_acc = (acc_edge + acc_node)/2
             self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
             self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
             self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
             self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
             self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
-
-            return acc_node
+            self.log('val_avg_acc', avg_acc, on_epoch=True, prog_bar=True, logger=True)
+            return avg_acc
         except:
             print('error with batch ' + str(batch_idx))
             return
