@@ -154,6 +154,18 @@ class LitModel(pl.LightningModule):
             am[i][i] = 1
         return am
     
+    def get_seg(self,edge_emb,edge_label):
+        all_am = []
+        all_gt = []
+        nb = int(math.sqrt(edge_emb.shape[0]))
+        edge_emb = edge_emb.reshape(nb, nb, -1)
+        edge_label = edge_label.reshape(nb, -1)
+        seg_am = torch.where(torch.argmax(edge_emb, dim=2) == 1, 1, 0)
+        seg_gt = torch.where(edge_label == 1, 1, 0)
+        for i in range(seg_am.shape[0]-1):
+                    all_am.append(int(seg_am[i,i+1]))
+                    all_gt.append(int(seg_gt[i,i+1]))
+        return all_am, all_gt
     
     def training_step(self, batch, batch_idx):
         # try:
@@ -240,24 +252,28 @@ class LitModel(pl.LightningModule):
         strokes_emb, edges_emb, los, strokes_label, edges_label, mask, name = self.load_batch(batch)
         node_hat, edge_hat = self.model(strokes_emb, edges_emb, los)
         try:
-            edge_hat_save, edges_label_save = self.edge_mask(edge_hat, edges_label, los)
-            torch.save([node_hat, edge_hat_save,strokes_label, edges_label_save, los], os.path.join(self.results_path, 'test',name[0].split('.')[0] + '.pt'))
+            # edge_hat_save, edges_label_save = self.edge_mask(edge_hat, edges_label, los)
+            torch.save([node_hat, edge_hat, strokes_label, edges_label, los], os.path.join(self.results_path, 'test',name[0].split('.')[0] + '.pt'))
+            seg_pred, seg_gt = self.get_seg(edge_hat, edges_label)
         except:
             print('error with ' + str(name))
             return
-        
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
         
         # edges_label = edges_label.reshape(-1)
         # edge_hat = edge_hat.reshape(-1, edge_hat.shape[-1])
+        acc_seg = accuracy_score(seg_gt, seg_pred)
+        prec_seg = precision_score(seg_gt, seg_pred)
         acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
         acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
         prec_node = precision_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy(),average='weighted')
         prec_edge = precision_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy(),average='weighted')
 
+        self.log('test_acc_seg', acc_seg, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_prec_seg', prec_seg, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
-        self.log('test_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_prec_node', prec_node, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
         self.log('test_prec_edge', prec_edge, on_epoch=True, prog_bar=True, logger=True)
         if acc_node > 0.98:
             self.node_correct += 1

@@ -112,10 +112,10 @@ class Edge_emb_softmax(torch.nn.Module):
 def train(model_name, model_params, model_args, pt_path, class_nb):
     data_name = pt_path.split('/')[-1]
     y = torch.load(os.path.join(pt_path, 'train_y.pt')).long()
-    X = torch.load(os.path.join(pt_path, 'train_X.pt'))
+    X = torch.load(os.path.join(pt_path, 'train_X.pt')).permute(0,2,1)
     datasets_train = TSDatasets(X.float(), y)
     val_y = torch.load(os.path.join(pt_path, 'val_y.pt')).long()
-    val_X = torch.load(os.path.join(pt_path, 'val_X.pt'))
+    val_X = torch.load(os.path.join(pt_path, 'val_X.pt')).permute(0,2,1)
     datasets_train = TSDatasets(X.float(), y)
     datasets_val = TSDatasets(val_X.float(), val_y)
     print(X.shape)
@@ -125,8 +125,9 @@ def train(model_name, model_params, model_args, pt_path, class_nb):
         softmax = torch.nn.Softmax(dim=-1)
         model = Edge_emb_softmax().to(model_args['device'])
     else:
-        model_name_str = str(model_name).split('.')[-2]
-        model = create_model(model_name, dls = dataloader, c_in = X.shape[-2], c_out = class_nb, **model_params).to(model_args['device'])
+        model = XceptionTime(2, 102)
+        # model_name_str = str(model_name).split('.')[-2]
+        # model = create_model(model_name, dls = dataloader, c_in = X.shape[-2], c_out = class_nb, **model_params).to(model_args['device'])
     # print('------' + str(class_nb) + '------data_name:'+ data_name +'------model_name:'+ model_name_str)
     learn = ts_learner(dataloader, model, loss_func=nn.CrossEntropyLoss(), metrics=accuracy)
     cbs = [
@@ -144,5 +145,5 @@ def test(pt_path):
 
 # root_path = '/home/xie-y/data/Edge_GAT/S150_R10/'
 root_path = '/home/e19b516g/yejing/data/data_for_graph/S150_R10'
-# train(model_name=XceptionTime ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, args.type), class_nb=102)
-train(model_name='edge' ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, 'alledge'), class_nb=14)
+train(model_name=XceptionTime ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, args.type), class_nb=102)
+# train(model_name='edge' ,model_params = {}, model_args = model_args, pt_path = os.path.join(root_path, 'alledge'), class_nb=14)

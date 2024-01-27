@@ -11,8 +11,8 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--checkpoint_name', type=str, default = 'maxnode_4')
-parser.add_argument('--config_name', type=str, default='paper/multi_train/maxnode_4')
+parser.add_argument('--checkpoint_name', type=str, default = 'corrected')
+parser.add_argument('--config_name', type=str, default='paper/baseline')
  
 args = parser.parse_args()
 args = vars(parser.parse_args())
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         model = LitModel.load_from_checkpoint(
             os.path.join(checkpoint_path, args['checkpoint_name'] + '.ckpt'),
             config_path = config_path,
-            results_path = './results/maxnode_4',
+            results_path = './results/corrected',
             mode = 'train'
             )
         

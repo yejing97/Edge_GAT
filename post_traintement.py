@@ -182,10 +182,11 @@ def add_lost(edge_pred):
                     break
     return edge_pred
 def edge_filter(edges_pred, edges_label, los):
-        # print(los)
         # return
         edges_pred = edges_pred.reshape(-1)
         edges_label = edges_label.reshape(-1)
+
+        
         edges_label = torch.where(edges_label < 14, edges_label, 0)
         try:
             los = los.squeeze().fill_diagonal_(0)
@@ -199,7 +200,7 @@ def edge_filter(edges_pred, edges_label, los):
         
 
 if __name__ == '__main__':
-    results_path = '/home/e19b516g/yejing/code/Edge_GAT/results/test'
+    results_path = '/home/e19b516g/yejing/code/Edge_GAT/results/corrected/test'
     edge_correct = 0
     structure_correct = 0
     all_correct = 0
@@ -228,7 +229,7 @@ if __name__ == '__main__':
                 except:
                     print(path)
                     edge_label = edge_label.reshape(-1)
-                    edge_pred = torch.argmax(edge_emb, dim=2)
+                    edge_pred = torch.argmax(edge_emb, dim=1)
                     # all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
                     # all_edge_pred = torch.concat((all_edge_label, edge_pred.reshape(-1)))
                 edge_pred, edge_label = edge_filter(edge_pred,edge_label, los)
