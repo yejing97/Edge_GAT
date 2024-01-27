@@ -17,7 +17,7 @@ model_args = {
     'device': 'cuda' if torch.cuda.is_available() else 'cpu',
     'class_nb_edge': 8,
     'class_nb_node': 102,
-    'epochs': 16,
+    'epochs': 60,
     'lr': args.lr,
     'batch_size': args.batch_size,
     'min_delta' : 0.00001,
