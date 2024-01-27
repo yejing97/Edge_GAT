@@ -93,7 +93,7 @@ def objective(trial: optuna.trial.Trial):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
-    epoch = 100
+    epoch = 30
 
     hyperparameters = dict(
         stroke_emb_nb=stroke_emb_nb,
