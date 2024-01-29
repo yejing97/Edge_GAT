@@ -1,5 +1,6 @@
 import torch
 import os
+import copy
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 
@@ -11,6 +12,7 @@ def load_pt(path):
     stroke_label = pt[2]
     edge_label = pt[3]
     los = pt[4]
+    edge_label = torch.where(edge_label < 14, edge_label, 0)
     return stroke_emb, edge_emb, stroke_label, edge_label, los
 
 def remove_extra_class(edge_pred):
@@ -75,6 +77,7 @@ def stroke2sym(node_label, componets):
         j = componets[i][0]
         new_label[i] = node_label[j]
     return new_label
+
 def sym2stroke(node_label, componets, nb):
     new_label = torch.zeros(nb)
     for i in range(len(componets)):
@@ -102,7 +105,6 @@ def lg2symlg(edge_label,componets):
         for j in range(len(componets)):
             for k in range(len(componets[j])):
                 componets[j][k] = componets[j][k] - gap
-        
     return edge_label
 
 def find_duplicates_except_zero(list):
@@ -188,23 +190,54 @@ def edge_filter(edges_pred, edges_label, los):
 
         
         edges_label = torch.where(edges_label < 14, edges_label, 0)
-        try:
-            los = los.squeeze().fill_diagonal_(0)
-            los = torch.triu(los)
-        except:
-            los = torch.zeros(0)
+        # try:
+        los = los.squeeze().fill_diagonal_(0)
+        los = torch.triu(los)
+        # except:
+        #     los = torch.zeros(0)
         indices = torch.nonzero(los.reshape(-1)).squeeze().reshape(-1)
         edges_label = edges_label[indices]
         edges_pred = edges_pred[indices]
         return edges_pred, edges_label
         
+def do_post_processing(edge_emb, edge_label, stroke_emb, stroke_label, los, path):
+    error = 0
+    los = los.squeeze(-1)
+    los = torch.triu(los)
+    los = los.squeeze().fill_diagonal_(0)
+    am = torch.where(edge_label == 1, 1, 0)
+    eb = copy.copy(edge_emb)
+    el = copy.copy(edge_label)
+    el = el.masked_fill(los == 0, 0)
+    # el = el * los
+    los = los.unsqueeze(-1)
+    eb = eb.masked_fill(los == 0, 0)
+    
+    sb = copy.copy(stroke_emb)
+    sl = copy.copy(stroke_label)
+    # am = torch.where(torch.argmax(edge_emb, dim=2) == 1, 1, 0)
+    mask, componets = connected_components_mask(am)
+    sl = stroke2sym(sl, componets)
+    el = lg2symlg(el, componets)
+    node_out, edge_out = sub_graph_pooling(sb, eb, mask)
+    np = torch.argmax(node_out, dim=1)
+    el = remove_extra_class(el)
+    ep = torch.argmax(edge_out, dim=2)
+    ep = remove_extra_class(ep)
+    ep = remove_repeat(ep)
+    ep = add_lost(ep)
+    return np, ep, sl, el, error
+
+        # node_pred = torch.argmax(stroke_emb, dim=1)
 
 if __name__ == '__main__':
-    results_path = '/home/e19b516g/yejing/code/Edge_GAT/results/corrected/test'
+    results_path = '/home/e19b516g/yejing/code/Edge_GAT/results/corrected/2023'
     edge_correct = 0
-    structure_correct = 0
+    node_correct = 0
     all_correct = 0
-    error = 0
+    edge_correct_pp = 0
+    node_correct_pp = 0
+    all_correct_pp = 0
     all_node_pred = torch.zeros(0)
     all_node_label = torch.zeros(0)
     all_edge_pred = torch.zeros(0)
@@ -214,28 +247,88 @@ if __name__ == '__main__':
             if file.endswith('.pt'):
                 path = os.path.join(root, file)
                 stroke_emb, edge_emb, stroke_label, edge_label, los = load_pt(path)
-                am = torch.where(edge_label == 1, 1, 0)
-                # am = torch.where(torch.argmax(edge_emb, dim=2) == 1, 1, 0)
-                try:
-                    mask, componets = connected_components_mask(am)
-                    node_out, edge_out = sub_graph_pooling(stroke_emb, edge_emb, mask)
-                    edge_label = remove_extra_class(edge_label)
-                    edge_pred = torch.argmax(edge_out, dim=2)
-                    edge_pred = remove_extra_class(edge_pred)
-                    edge_pred = remove_repeat(edge_pred)
-                    edge_pred = add_lost(edge_pred)
-                    node_pred = torch.argmax(stroke_emb, dim=1)
-                    edge_label = lg2symlg(edge_label, componets)
-                except:
+                nb = stroke_emb.shape[0]
+                if nb * nb == edge_label.shape[0]:
+                    edge_emb = edge_emb.reshape(nb, nb, -1)
+                    edge_label = edge_label.reshape(nb, nb)
+                    
+                    try:
+                        node_pred_pp, edge_pred_pp, stroke_label_pp, edge_label_pp, error = do_post_processing(edge_emb, edge_label, stroke_emb, stroke_label, los, path)
+                    except:
+                        print(path)
+                        if torch.equal(stroke_pred, stroke_label) and torch.equal(edge_pred, edge_label):
+                            all_correct_pp += 1
+                        if torch.equal(edge_pred, edge_label):
+                            edge_correct_pp += 1
+                        
+                        if torch.equal(stroke_pred, stroke_label):
+                            node_correct_pp += 1
+                        continue
+                    edge_pred = torch.argmax(edge_emb, dim=2)
+                    stroke_pred = torch.argmax(stroke_emb, dim=1)
+                    edge_pred, edge_label = edge_filter(edge_pred, edge_label, los)
+                    all_node_pred = torch.concat((all_node_pred, stroke_pred))
+                    all_node_label = torch.concat((all_node_label, stroke_label))
+                    all_edge_pred = torch.concat((all_edge_pred, edge_pred))
+                    all_edge_label = torch.concat((all_edge_label, edge_label))
+                else:
                     print(path)
-                    edge_label = edge_label.reshape(-1)
-                    edge_pred = torch.argmax(edge_emb, dim=1)
-                    # all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
-                    # all_edge_pred = torch.concat((all_edge_label, edge_pred.reshape(-1)))
-                edge_pred, edge_label = edge_filter(edge_pred,edge_label, los)
-                if edge_label.reshape(-1).shape == edge_pred.reshape(-1).shape:
-                    all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
-                    all_edge_pred = torch.concat((all_edge_pred, edge_pred.reshape(-1)))
+
+                if torch.equal(stroke_pred, stroke_label) and torch.equal(edge_pred, edge_label):
+                    all_correct += 1
+                if torch.equal(edge_pred, edge_label):
+                    edge_correct += 1
+                
+                if torch.equal(stroke_pred, stroke_label):
+                    node_correct += 1
+                if torch.equal(node_pred_pp, stroke_label_pp) and torch.equal(edge_pred_pp, edge_label_pp):
+                    all_correct_pp += 1
+                if torch.equal(edge_pred_pp, edge_label_pp):
+                    edge_correct_pp += 1
+                if torch.equal(node_pred_pp, stroke_label_pp):
+                    node_correct_pp += 1
+                # if torch.equal(node_pred_pp, stroke_label_pp) and not torch.equal(edge_pred_pp, edge_label_pp):
+                #     print(path)
+                #     print(edge_pred_pp)
+                #     print(edge_label_pp)
+    print('all_correct:' + str(all_correct))
+    print('edge_correct:' + str(edge_correct))
+    print('node_correct:' + str(node_correct))
+    print('all_correct_pp:' + str(all_correct_pp))
+    print('edge_correct_pp:' + str(edge_correct_pp))
+    print('node_correct_pp:' + str(node_correct_pp))
+    node_acc = accuracy_score(all_node_label, all_node_pred)
+    edge_acc = accuracy_score(all_edge_label, all_edge_pred)
+    node_precision = precision_score(all_node_label, all_node_pred, average='weighted')
+    edge_precision = precision_score(all_edge_label, all_edge_pred, average='weighted')
+    print('node_acc:' + str(node_acc))
+    print('edge_acc:' + str(edge_acc))
+    print('node_precision:' + str(node_precision))
+    print('edge_precision:' + str(edge_precision))
+    print('error:' + str(error))
+
+                # am = torch.where(edge_label == 1, 1, 0)
+                # # am = torch.where(torch.argmax(edge_emb, dim=2) == 1, 1, 0)
+                # try:
+                #     mask, componets = connected_components_mask(am)
+                #     node_out, edge_out = sub_graph_pooling(stroke_emb, edge_emb, mask)
+                #     edge_label = remove_extra_class(edge_label)
+                #     edge_pred = torch.argmax(edge_out, dim=2)
+                #     edge_pred = remove_extra_class(edge_pred)
+                #     edge_pred = remove_repeat(edge_pred)
+                #     edge_pred = add_lost(edge_pred)
+                #     node_pred = torch.argmax(stroke_emb, dim=1)
+                #     edge_label = lg2symlg(edge_label, componets)
+                # except:
+                #     print(path)
+                #     edge_label = edge_label.reshape(-1)
+                #     edge_pred = torch.argmax(edge_emb, dim=1)
+                #     # all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
+                #     # all_edge_pred = torch.concat((all_edge_label, edge_pred.reshape(-1)))
+                # edge_pred, edge_label = edge_filter(edge_pred,edge_label, los)
+                # if edge_label.reshape(-1).shape == edge_pred.reshape(-1).shape:
+                #     all_edge_label = torch.concat((all_edge_label, edge_label.reshape(-1)))
+                #     all_edge_pred = torch.concat((all_edge_pred, edge_pred.reshape(-1)))
 
 
 
@@ -257,28 +350,28 @@ if __name__ == '__main__':
                 #     error += 1
                 #     edge_pred = 
                 #     all_edge_pred = torch.concat((all_edge_label, edge_pred.reshape(-1)))
-                mask_pred = torch.where(edge_pred == 0, 0, 1)
-                mask_label = torch.where(edge_label == 0, 0, 1)
+                # mask_pred = torch.where(edge_pred == 0, 0, 1)
+                # mask_label = torch.where(edge_label == 0, 0, 1)
 
-                if torch.equal(node_pred, stroke_label) and torch.equal(edge_pred, edge_label):
-                    all_correct += 1
-                if torch.equal(edge_pred, edge_label):
-                    structure_correct += 1
-                if torch.equal(node_pred, stroke_label):
-                    edge_correct += 1
+    #             if torch.equal(node_pred, stroke_label) and torch.equal(edge_pred, edge_label):
+    #                 all_correct += 1
+    #             if torch.equal(edge_pred, edge_label):
+    #                 structure_correct += 1
+    #             if torch.equal(node_pred, stroke_label):
+    #                 edge_correct += 1
                 
-                all_node_label = torch.concat((all_node_label, stroke_label))
-                all_node_pred = torch.concat((all_node_pred, node_pred))
+    #             all_node_label = torch.concat((all_node_label, stroke_label))
+    #             all_node_pred = torch.concat((all_node_pred, node_pred))
 
-    print(accuracy_score(all_edge_label, all_edge_pred))
-    print(precision_score(all_edge_label, all_edge_pred, average='weighted'))
-                # else:
-                    #  print(edge_pred, edge_label)
+    # print(accuracy_score(all_edge_label, all_edge_pred))
+    # print(precision_score(all_edge_label, all_edge_pred, average='weighted'))
+    #             # else:
+    #                 #  print(edge_pred, edge_label)
 
-    print(all_correct)
-    print(edge_correct)
-    print(structure_correct)
-    print(error)
+    # print(all_correct)
+    # print(edge_correct)
+    # print(structure_correct)
+    # print(error)
                 # print(edge_pred)
                 # print(edge_label)
                 # print(torch.sum(edge_pred == edge_label).item())

@@ -11,8 +11,8 @@ import sys
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--checkpoint_name', type=str, default = 'corrected')
-parser.add_argument('--config_name', type=str, default='paper/baseline')
+parser.add_argument('--checkpoint_name', type=str, default = 'corrected-epoch=88-val_acc_node=0.88')
+parser.add_argument('--config_name', type=str, default='paper/corrected')
  
 args = parser.parse_args()
 args = vars(parser.parse_args())
