@@ -163,8 +163,8 @@ class LitModel(pl.LightningModule):
         seg_am = torch.where(torch.argmax(edge_emb, dim=2) == 1, 1, 0)
         seg_gt = torch.where(edge_label == 1, 1, 0)
         for i in range(seg_am.shape[0]-1):
-                    all_am.append(int(seg_am[i,i+1]))
-                    all_gt.append(int(seg_gt[i,i+1]))
+            all_am.append(int(seg_am[i,i+1]))
+            all_gt.append(int(seg_gt[i,i+1]))
         return all_am, all_gt
     
     def training_step(self, batch, batch_idx):
@@ -196,11 +196,14 @@ class LitModel(pl.LightningModule):
 
             if self.mode == 'pre_train':
                 self.log('train_loss', loss_node, on_epoch=True, prog_bar=True, logger=True)
+            elif self.mode == 'GAT':
+                self.log('train_loss', loss_node, on_epoch=True, prog_bar=True, logger=True)
+                return loss_node
             else:
                 self.log('train_loss_node', loss_node, on_epoch=True, prog_bar=True, logger=True)
                 self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
                 self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
-            return loss
+                return loss
         # except:
         #     print('error with batch ' + str(batch_idx))
         #     return
@@ -232,18 +235,23 @@ class LitModel(pl.LightningModule):
             loss_edge = self.loss_edge(edge_hat, edges_label)
             loss_node = self.loss_node(node_hat, strokes_label)
             loss = self.lambda1*loss_node + self.lambda2 * loss_edge
-            self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
-
-            acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
-            acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
-            avg_acc = (acc_edge + acc_node)/2
-            self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
-            self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
-            self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
-            self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_avg_acc', avg_acc, on_epoch=True, prog_bar=True, logger=True)
-            return avg_acc
+            # self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
+            if self.mode == 'GAT':
+                self.log('val_loss', loss_node, on_epoch=True, prog_bar=True, logger=True)
+                avg_acc = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+                self.log('val_avg_acc', avg_acc, on_epoch=True, prog_bar=True, logger=True)
+                return avg_acc
+            else:
+                acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+                acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
+                avg_acc = (acc_edge + acc_node)/2
+                self.log("val_loss_node", loss_node, on_epoch=True, prog_bar=False, logger=True)
+                self.log('val_loss_edge', loss_edge, on_epoch=True, prog_bar=False, logger=True)
+                self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=False, logger=True)
+                self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
+                self.log('val_acc_edge', acc_edge, on_epoch=True, prog_bar=True, logger=True)
+                self.log('val_avg_acc', avg_acc, on_epoch=True, prog_bar=True, logger=True)
+                return avg_acc
         except:
             print('error with batch ' + str(batch_idx))
             return
@@ -258,8 +266,11 @@ class LitModel(pl.LightningModule):
         except:
             print('error with ' + str(name))
             return
+        los = torch.where(edges_label == 1, 0, los.reshape(-1)).reshape(los.shape)
+
         edge_hat, edges_label = self.edge_filter(edge_hat, edges_label, los)
-        
+        # seg_gt = torch.where(edges_label == 1, 1, 0).reshape(-1)
+        # seg_pred = torch.where(torch.argmax(edge_hat, dim=1) == 1, 1, 0).reshape(-1)
         # edges_label = edges_label.reshape(-1)
         # edge_hat = edge_hat.reshape(-1, edge_hat.shape[-1])
         acc_seg = accuracy_score(seg_gt, seg_pred)
@@ -290,13 +301,13 @@ class LitModel(pl.LightningModule):
         
 
     
-    def on_validation_epoch_end(self) -> None:
-        # return super().on_validation_epoch_end()
-        all_preds = self.validation_step_outputs
-        epoch_id = self.current_epoch
-        if epoch_id % 10 == 0:
-            torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
-        self.validation_step_outputs.clear()
+    # def on_validation_epoch_end(self) -> None:
+    #     # return super().on_validation_epoch_end()
+    #     all_preds = self.validation_step_outputs
+    #     epoch_id = self.current_epoch
+    #     if epoch_id % 10 == 0:
+    #         torch.save(all_preds, os.path.join(self.results_path, 'epoch_' + str(epoch_id) + '.pt'))
+    #     self.validation_step_outputs.clear()
 
         # node_preds, node_labels, edge_preds, edge_labels = all_preds
     def configure_optimizers(self):

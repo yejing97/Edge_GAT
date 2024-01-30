@@ -60,7 +60,7 @@ class CROHMEDataset(torch.utils.data.Dataset):
         if self.max_node == -1:
             for name in self.data_list:
                 n = name.split('_')[0]
-                node_nb = int(n.split('E')[0].split('N')[1])
+                node_nb = -1
                 sub_eq_list = sub_eq_list + [[name, node_nb, 0, node_nb]]
         else:
             for name in self.data_list:
@@ -123,7 +123,11 @@ class CROHMEDataset(torch.utils.data.Dataset):
         name, node_nb, start, end = self.sub_eq_list[index]
         # data = np.load(os.path.join(self.data_path, name))
         data = self.load_data(self.data_path, name)
-        los = torch.from_numpy(data['los'])[start:end,start:end].long()
+        los = torch.from_numpy(data['los'])
+        if node_nb == -1:
+            node_nb = los.shape[0]
+            end = node_nb
+        los = los[start:end,start:end].long()
         am = torch.zeros((los.shape[0], los.shape[1]), dtype=int)
         mask = self.get_mask(torch.from_numpy(data['edge_labels']), start, end)
         for i in range(los.shape[0] - 1):
