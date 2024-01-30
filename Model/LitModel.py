@@ -238,9 +238,9 @@ class LitModel(pl.LightningModule):
             # self.validation_step_outputs.append([node_hat, strokes_label, edge_hat, edges_label])
             if self.mode == 'GAT':
                 self.log('val_loss', loss_node, on_epoch=True, prog_bar=True, logger=True)
-                avg_acc = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
-                self.log('val_avg_acc', avg_acc, on_epoch=True, prog_bar=True, logger=True)
-                return avg_acc
+                acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
+                self.log('val_acc_node', acc_node, on_epoch=True, prog_bar=True, logger=True)
+                return acc_node
             else:
                 acc_node = accuracy_score(strokes_label.cpu().numpy(), torch.argmax(node_hat, dim=1).cpu().numpy())
                 acc_edge = accuracy_score(edges_label.cpu().numpy(), torch.argmax(edge_hat, dim=1).cpu().numpy())
