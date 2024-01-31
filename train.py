@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config_name', type=str, default = 'paper/corrected')
 parser.add_argument('--mode', type=str, default='XceptionTime')
 parser.add_argument('--results_path', type=str, default='val_results')
-parser.add_argument('--logs_path', type=str, default='logs/paper/multi_train/')
+parser.add_argument('--logs_path', type=str, default='logs/paper/ablation')
 
 args = parser.parse_args()
 args = vars(parser.parse_args())
