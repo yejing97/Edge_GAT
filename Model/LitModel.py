@@ -179,8 +179,6 @@ class LitModel(pl.LightningModule):
         self.log('train_loss_edge', loss_edge, on_epoch=True, prog_bar=True, logger=True)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
-
-    
     def validation_step(self, batch, batch_idx):
         try:
             strokes_emb, edges_emb, los, strokes_label, edges_label, mask, _ = self.load_batch(batch)

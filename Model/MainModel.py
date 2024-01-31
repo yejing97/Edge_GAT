@@ -123,16 +123,9 @@ class MainModel(pl.LightningModule):
         self.softmax2 = torch.nn.Softmax(dim=2)
         self.activation = torch.nn.LeakyReLU()
         self.mode = mode
+        print('mode:' + mode)
 
-        if mode == 'pre_train':
-            self.node_emb = XceptionTime(node_input_size, node_class_nb)
-            self.edge_emb = Edge_emb(edge_emb_parm, dropout)
-            return
-            
-            # self.linear = torch.nn.Linear(node_gat_parm[0], node_class_nb)
-            # self.pre_bn = torch.nn.BatchNorm1d(node_class_nb)
-            # self.softmax = torch.nn.Softmax(dim=-1)
-        elif mode == 'XceptionTime':
+        if mode == 'XceptionTime':
             self.node_emb = XceptionTime(2, node_gat_parm[0])
         elif mode == 'BiLSTM':
             self.node_emb = LSTM(2, node_gat_parm[0], bidirectional=False)
@@ -175,57 +168,15 @@ class MainModel(pl.LightningModule):
                     torch.nn.init.kaiming_uniform_(param)
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
-        if self.mode == 'pre_train':
-            node_out = self.node_emb(node_in_features.squeeze(0))
-            edge_out = self.edge_emb(edge_in_features)
-            # node_out = self.linear(node_out)
-            # node_out = self.pre_bn(node_out)
-            # node_out = self.softmax(node_out)
 
-            return node_out, edge_out.reshape(-1,edge_out.shape[2])
+        node_emb_feat = self.node_emb(node_in_features.permute(0,2,1))
+        edge_emb_feat = self.edge_emb(edge_in_features)
+        node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
+        edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
+        edge_gat_feat_t = edge_gat_feat.transpose(0, 1)
+        edge_gat_feat_concat = torch.cat([edge_gat_feat, edge_gat_feat_t], dim=-1).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], edge_gat_feat.shape[-1] * 2)
 
-        else:
-            node_emb_feat = self.node_emb(node_in_features.permute(0,2,1))
-            edge_emb_feat = self.edge_emb(edge_in_features)
-            node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
-            # print('node_gat_feat', node_gat_feat.shape)
-            # print('edge_gat_feat', edge_gat_feat.shape)
-            edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
-            edge_gat_feat_t = edge_gat_feat.transpose(0, 1)
-            edge_gat_feat_concat = torch.cat([edge_gat_feat, edge_gat_feat_t], dim=-1).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], edge_gat_feat.shape[-1] * 2)
+        node_readout = self.readout_node(node_gat_feat)
+        edge_readout = self.readout_edge(edge_gat_feat_concat)
 
-            node_readout = self.readout_node(node_gat_feat)
-            edge_readout = self.readout_edge(edge_gat_feat_concat)
-
-            return node_readout, edge_readout
-
-
-
-            # node_emb_feat = self.node_emb(node_in_features.squeeze(0))
-            # edge_emb_feat = self.edge_emb(edge_in_features.squeeze(0))
-            # edge_emb_feat = self.bn_edge_0(edge_emb_feat.transpose(1, 2)).transpose(1, 2)
-            # edge_emb_feat = self.activation(edge_emb_feat)
-            # node_gat_feat, edge_gat_feat = self.edge_gat1(node_emb_feat, edge_emb_feat, adj_mat)
-            # node_gat_feat = self.bn_node_1(node_gat_feat)
-            # edge_gat_feat = self.bn_edge_1(edge_gat_feat)
-            # node_gat_feat = self.activation(node_gat_feat)
-            # edge_gat_feat = self.activation(edge_gat_feat)
-            # # print('node_gat_feat', node_gat_feat.shape)
-            # # print('edge_gat_feat', edge_gat_feat.shape)
-            # node_gat_feat, edge_gat_feat = self.edge_gat2(node_gat_feat, edge_gat_feat, adj_mat)
-            # node_gat_feat = self.bn_node_2(node_gat_feat)
-            # edge_gat_feat = self.bn_edge_2(edge_gat_feat)
-            # node_gat_feat = self.activation(node_gat_feat)
-            # edge_gat_feat = self.activation(edge_gat_feat)
-            
-            # node_repeat = node_gat_feat.repeat(1, node_gat_feat.shape[0]).reshape(node_gat_feat.shape[1], node_gat_feat.shape[0], node_gat_feat.shape[0])
-            # eye = torch.eye(node_gat_feat.shape[0], node_gat_feat.shape[0]).to(node_gat_feat.device).repeat(node_gat_feat.shape[1], 1, 1)
-            # node_out = (node_repeat * eye).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], node_gat_feat.shape[1])
-        # node_readout = self.readout_node(node_gat_feat)
-            # edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
-            # edge_t = edge_gat_feat.transpose(0, 1)
-
-            # edge_feat_concat = torch.cat([edge_gat_feat, edge_t], dim=-1)
-            # edge_readout = self.readout_edge(edge_feat_concat.reshape(edge_feat_concat.shape[0] * edge_feat_concat.shape[1], edge_feat_concat.shape[2]))
-        # return node_out, edge_gat_feat
-        # return node_readout, edge_readout
+        return node_readout, edge_readout
