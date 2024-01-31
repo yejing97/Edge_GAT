@@ -166,10 +166,7 @@ class MainModel(pl.LightningModule):
         if mode == 'pre_train':
             self.node_emb = XceptionTime(node_input_size, node_class_nb)
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
-        elif mode == 'GAT':
-            self.node_emb = XceptionTime(2, node_gat_parm[0])
-            self.edge_emb = Edge_emb(edge_emb_parm, dropout)
-            # self.gat = 
+            
             # self.linear = torch.nn.Linear(node_gat_parm[0], node_class_nb)
             # self.pre_bn = torch.nn.BatchNorm1d(node_class_nb)
             # self.softmax = torch.nn.Softmax(dim=-1)

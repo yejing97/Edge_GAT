@@ -8,7 +8,7 @@ from Model.MainModel import Edge_emb
 # import make_pt
 # import normalization
 parser = argparse.ArgumentParser()
-parser.add_argument('--type', type=str, default='onestroke')
+parser.add_argument('--type', type=str, default='allsymble')
 parser.add_argument('--batch_size', type=int, default=250)
 parser.add_argument('--lr', type=float, default=1e-3)
 args = parser.parse_args()
@@ -125,8 +125,7 @@ def train(model_name, model_params, model_args, pt_path, class_nb):
         softmax = torch.nn.Softmax(dim=-1)
         model = Edge_emb_softmax().to(model_args['device'])
     else:
-        # model = XceptionTime(2, 102)
-        model = LSTM(2, 102, bidirectional=False)
+        model = XceptionTime(2, 102)
         # model_name_str = str(model_name).split('.')[-2]
         # model = create_model(model_name, dls = dataloader, c_in = X.shape[-2], c_out = class_nb, **model_params).to(model_args['device'])
     # print('------' + str(class_nb) + '------data_name:'+ data_name +'------model_name:'+ model_name_str)
