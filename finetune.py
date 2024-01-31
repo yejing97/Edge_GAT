@@ -42,48 +42,48 @@ def objective(trial: optuna.trial.Trial):
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     lambda1 = trial.suggest_float('lambda1', 0.4, 0.8, step=0.1)
     lambda2 = 1 - lambda1
-    # gat_layer = trial.suggest_categorical('gat_layer', [2, 3, 4])
+    gat_layer = trial.suggest_categorical('gat_layer', [2, 3, 4])
     # dropout = trial.suggest_float('dropout', 0.2, 0.6, step=0.1)
     dropout = 0.2
-    node_gat_parm = [384,512,512,384]
+    # node_gat_parm = [384,512,512,384]
     edge_gat_parm = [384,256,512,256]
-    gat_heads_parm = [16,8,1]
+    # gat_heads_parm = [16,8,1]
     # edge_emb_layer = trial.suggest_categorical('edge_emb_layer', [2, 3])
-    # readout_layer = trial.suggest_categorical('readout_layer', [2, 3])
-    # node_gat_parm = []
+    readout_layer = trial.suggest_categorical('readout_layer', [2, 3])
+    node_gat_parm = []
     # edge_gat_parm = []
-    # gat_heads_parm = []
-    # for i in range(gat_layer - 1):
-    #     random_node = trial.suggest_categorical('random_node_' + str(i), [64, 128, 256, 384, 512])
-    #     node_gat_parm.append(random_node)
+    gat_heads_parm = []
+    for i in range(gat_layer - 1):
+        random_node = trial.suggest_categorical('random_node_' + str(i), [64, 128, 256, 384, 512])
+        node_gat_parm.append(random_node)
     #     random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
     #     edge_gat_parm.append(random_edge)
-    #     random_heads = trial.suggest_categorical('random_heads_' + str(i), [4, 8, 16])
-    #     gat_heads_parm.append(random_heads)
-    # node_gat_parm.append(trial.suggest_categorical('node_gat_parm_' + str(gat_layer - 1), [128, 256, 384, 512]))
+        random_heads = trial.suggest_categorical('random_heads_' + str(i), [4, 8, 16])
+        gat_heads_parm.append(random_heads)
+    node_gat_parm.append(trial.suggest_categorical('node_gat_parm_' + str(gat_layer - 1), [128, 256, 384, 512]))
     # edge_gat_parm.append(trial.suggest_categorical('edge_gat_parm_' + str(gat_layer - 1), [128, 256, 384, 512]))
-    # gat_heads_parm[-1] = 1
+    gat_heads_parm[-1] = 1
 
-    edge_emb_layer = 3
-    edge_emb_parm = []
-    edge_emb_parm.append(rel_emb_nb)
-    for i in range(edge_emb_layer - 2):
-        random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
-        edge_emb_parm.append(random_edge)
-    edge_emb_parm.append(edge_gat_parm[0])
-
-    node_readout = [384,384,102]
+    # edge_emb_layer = 3
+    # edge_emb_parm = []
+    # edge_emb_parm.append(rel_emb_nb)
+    # for i in range(edge_emb_layer - 2):
+    #     random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
+    #     edge_emb_parm.append(random_edge)
+    # edge_emb_parm.append(edge_gat_parm[0])
+    edge_emb_parm = [40, 384, 384]
+    # node_readout = [384,384,102]
     edge_readout = [512,384,14]
-    # node_readout = []
+    node_readout = []
     # edge_readout = []
-    # node_readout.append(node_gat_parm[-1])
+    node_readout.append(node_gat_parm[-1])
     # edge_readout.append(edge_gat_parm[-1] * 2)
-    # for i in range(readout_layer - 1):
-    #     random_node = trial.suggest_categorical('random_node_' + str(i), [64, 128, 256, 384, 512])
-    #     node_readout.append(random_node)
+    for i in range(readout_layer - 1):
+        random_node = trial.suggest_categorical('random_node_' + str(i), [64, 128, 256, 384, 512])
+        node_readout.append(random_node)
     #     random_edge = trial.suggest_categorical('random_edge_' + str(i), [64, 128, 256, 384, 512])
     #     edge_readout.append(random_edge)
-    # node_readout.append(node_class_nb)
+    node_readout.append(node_class_nb)
     # edge_readout.append(edge_class_nb)
 
 
@@ -93,7 +93,7 @@ def objective(trial: optuna.trial.Trial):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     speed = False
-    epoch = 30
+    epoch = 50
 
     hyperparameters = dict(
         stroke_emb_nb=stroke_emb_nb,
@@ -146,7 +146,7 @@ def objective(trial: optuna.trial.Trial):
         make_yaml(hyperparameters, yaml_path)
         # exp_name = 'lr_' + str(lr) + '_bs_' + str(batch_size) + '_epoch_' + str(epoch) + '_dropout_' + str(dropout) + '_l1_' + str(lambda1) + '_l2_' + str(lambda2)
         hyp_name = args.am_type + '_nodenorm_' + str(node_type) + '_edgeclass_' + str(args.edge_class)
-        logger_path = os.path.join(root_path,'finetunning/correct_channel', hyp_name, npz_name)
+        logger_path = os.path.join(root_path,'finetunning/GAT', hyp_name, npz_name)
         logger = TensorBoardLogger(save_dir=logger_path, name=exp_name)
         val_results_path = os.path.join(results_path, npz_name, exp_name)
         if not os.path.exists(val_results_path):
@@ -159,7 +159,7 @@ def objective(trial: optuna.trial.Trial):
 
         model = LitModel(
             config_path = yaml_path,
-            mode = 'train',
+            mode = 'GAT',
             results_path = val_results_version
         )
         dm = CROHMEDatamodule(
