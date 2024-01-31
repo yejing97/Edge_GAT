@@ -170,20 +170,18 @@ class MainModel(pl.LightningModule):
             self.node_emb = XceptionTime(2, node_gat_parm[0])
             self.gat = Multi_GAT(node_gat_parm, gat_heads_parm, dropout, mode)
             self.readout_node = Multi_Readout(node_readout, dropout)
-        else:
+        elif mode == 'XceptionTime':
             self.node_emb = XceptionTime(2, node_gat_parm[0])
-            # self.node_emb = LSTM(2, node_gat_parm[0], bidirectional=False)
-            # self.node_emb = torch.nn.LSTM(2, int(node_gat_parm[0]/2),2, bidirectional = True)
-            # self.node_emb = TransformerModel(2, node_gat_parm[0])
-            self.edge_emb = Edge_emb(edge_emb_parm, dropout)
-            # for param in self.edge_emb.parameters():
-            #     param.requires_grad = False
-            # self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_parm[0])
+        elif mode =='BiLSTM':
+            self.node_emb = LSTM(2, node_gat_parm[0], bidirectional=False)
+        elif mode == 'Transformer':
+            self.node_emb = TransformerModel(2, node_gat_parm[0])
+        self.edge_emb = Edge_emb(edge_emb_parm, dropout)
 
-            self.edge_gat = Multi_EGAT(node_gat_parm, edge_gat_parm, gat_heads_parm, dropout, mode)
+        self.edge_gat = Multi_EGAT(node_gat_parm, edge_gat_parm, gat_heads_parm, dropout, mode)
 
-            self.readout_node = Multi_Readout(node_readout, dropout)
-            self.readout_edge = Multi_Readout(edge_readout, dropout)
+        self.readout_node = Multi_Readout(node_readout, dropout)
+        self.readout_edge = Multi_Readout(edge_readout, dropout)
         # for param in self.readout_edge.parameters():
         #     param.requires_grad = False
 
