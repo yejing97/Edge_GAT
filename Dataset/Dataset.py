@@ -121,7 +121,6 @@ class CROHMEDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
         name, node_nb, start, end = self.sub_eq_list[index]
-        print(name, node_nb, start, end)
         # data = np.load(os.path.join(self.data_path, name))
         data = self.load_data(self.data_path, name)
         los = torch.from_numpy(data['los'])
