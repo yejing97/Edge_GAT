@@ -167,7 +167,7 @@ def objective(trial: optuna.trial.Trial):
             config_path = yaml_path
         )
         early_stopping = pl.callbacks.EarlyStopping(
-            monitor='val_avg_acc',
+            monitor='val_acc_node',
             min_delta=0,
             patience=20,
             verbose=False,
@@ -182,11 +182,11 @@ def objective(trial: optuna.trial.Trial):
             accelerator="auto",
             devices=1,
             reload_dataloaders_every_n_epochs=reload_dataloaders_every_n_epochs,
-            callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_avg_acc'), early_stopping]
+            callbacks=[optuna.integration.PyTorchLightningPruningCallback(trial, monitor='val_acc_node'), early_stopping]
         )
         try:
             trainer.fit(model.to(device), dm)
-            return trainer.callback_metrics['val_avg_acc'].item()
+            return trainer.callback_metrics['val_acc_node'].item()
 
         except Exception as e:
             print(f"An exception occurred during training: {str(e)}")
