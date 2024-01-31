@@ -125,16 +125,6 @@ class MainModel(pl.LightningModule):
         self.mode = mode
         print('mode:' + mode)
 
-<<<<<<< HEAD
-        if mode == 'XceptionTime':
-            self.node_emb = XceptionTime(2, node_gat_parm[0])
-        elif mode == 'BiLSTM':
-            self.node_emb = LSTM(2, node_gat_parm[0], bidirectional=False)
-        elif mode == 'Transformer':
-            # self.node_emb = torch.nn.LSTM(2, int(node_gat_parm[0]/2),2, bidirectional = True)
-            self.node_emb = TransformerModel(2, node_gat_parm[0])
-        self.edge_emb = Edge_emb(edge_emb_parm, dropout)
-=======
         if mode == 'pre_train':
             self.node_emb = XceptionTime(node_input_size, node_class_nb)
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
@@ -146,7 +136,6 @@ class MainModel(pl.LightningModule):
             # self.node_emb = XceptionTime(150, node_gat_parm[0])
             self.node_emb = TransformerModel(2, node_gat_parm[0])
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
->>>>>>> parent of 1066bec (try bi lstm)
             # for param in self.edge_emb.parameters():
             #     param.requires_grad = False
             # self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_parm[0])
@@ -183,25 +172,12 @@ class MainModel(pl.LightningModule):
 
     def forward(self, node_in_features, edge_in_features, adj_mat):
 
-<<<<<<< HEAD
         node_emb_feat = self.node_emb(node_in_features.permute(0,2,1))
         edge_emb_feat = self.edge_emb(edge_in_features)
         node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
         edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
         edge_gat_feat_t = edge_gat_feat.transpose(0, 1)
         edge_gat_feat_concat = torch.cat([edge_gat_feat, edge_gat_feat_t], dim=-1).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], edge_gat_feat.shape[-1] * 2)
-=======
-            return node_out, edge_out.reshape(-1,edge_out.shape[2])
-        else:
-            node_emb_feat = self.node_emb(node_in_features.transpose(1, 2))
-            edge_emb_feat = self.edge_emb(edge_in_features)
-            node_gat_feat, edge_gat_feat = self.edge_gat(node_emb_feat, edge_emb_feat, adj_mat)
-            # print('node_gat_feat', node_gat_feat.shape)
-            # print('edge_gat_feat', edge_gat_feat.shape)
-            edge_gat_feat = edge_gat_feat.reshape(node_gat_feat.shape[0] , node_gat_feat.shape[0], edge_gat_feat.shape[1])
-            edge_gat_feat_t = edge_gat_feat.transpose(0, 1)
-            edge_gat_feat_concat = torch.cat([edge_gat_feat, edge_gat_feat_t], dim=-1).reshape(node_gat_feat.shape[0] * node_gat_feat.shape[0], edge_gat_feat.shape[-1] * 2)
->>>>>>> parent of 1066bec (try bi lstm)
 
         node_readout = self.readout_node(node_gat_feat)
         edge_readout = self.readout_edge(edge_gat_feat_concat)
