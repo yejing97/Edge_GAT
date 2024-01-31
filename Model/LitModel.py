@@ -273,7 +273,7 @@ class LitModel(pl.LightningModule):
             return optimizer
         elif self.mode == 'pre_train_edge':
             return optimizer
-        elif self.mode == 'train':
+        else:
             return {
             'optimizer': optimizer,
             'lr_scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.patience, verbose=True, mode='max'),
