@@ -121,24 +121,20 @@ class MainModel(pl.LightningModule):
         super().__init__()
         self.softmax1 = torch.nn.Softmax(dim=1)
         self.softmax2 = torch.nn.Softmax(dim=2)
-        # self.bn_edge_0 = torch.nn.BatchNorm1d(edge_gat_input_size)
-        # self.bn_node_1 = torch.nn.BatchNorm1d(node_gat_hidden_size)
-        # self.bn_node_2 = torch.nn.BatchNorm1d(node_gat_output_size)
-        # self.bn_edge_1 = torch.nn.BatchNorm1d(edge_gat_hidden_size)
-        # self.bn_edge_2 = torch.nn.BatchNorm1d(edge_gat_output_size)
         self.activation = torch.nn.LeakyReLU()
         self.mode = mode
 
         if mode == 'pre_train':
             self.node_emb = XceptionTime(node_input_size, node_class_nb)
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
+            return
             
             # self.linear = torch.nn.Linear(node_gat_parm[0], node_class_nb)
             # self.pre_bn = torch.nn.BatchNorm1d(node_class_nb)
             # self.softmax = torch.nn.Softmax(dim=-1)
         elif mode == 'XceptionTime':
             self.node_emb = XceptionTime(2, node_gat_parm[0])
-        elif mode == 'LSTM':
+        elif mode == 'BiLSTM':
             self.node_emb = LSTM(2, node_gat_parm[0], bidirectional=False)
         elif mode == 'Transformer':
             # self.node_emb = torch.nn.LSTM(2, int(node_gat_parm[0]/2),2, bidirectional = True)
