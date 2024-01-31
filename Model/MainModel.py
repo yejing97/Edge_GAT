@@ -128,17 +128,17 @@ class MainModel(pl.LightningModule):
         if mode == 'pre_train':
             self.node_emb = XceptionTime(node_input_size, node_class_nb)
             self.edge_emb = Edge_emb(edge_emb_parm, dropout)
-            
-            # self.linear = torch.nn.Linear(node_gat_parm[0], node_class_nb)
-            # self.pre_bn = torch.nn.BatchNorm1d(node_class_nb)
-            # self.softmax = torch.nn.Softmax(dim=-1)
-        else:
-            # self.node_emb = XceptionTime(150, node_gat_parm[0])
+        # elif mode == 'GAT':
+        #     self.node_emb = XceptionTime(2, node_gat_parm[0])
+        #     self.gat = Multi_GAT(node_gat_parm, gat_heads_parm, dropout, mode)
+        #     self.readout_node = Multi_Readout(node_readout, dropout)
+        elif mode == 'XceptionTime':
+            self.node_emb = XceptionTime(2, node_gat_parm[0])
+        elif mode =='BiLSTM':
+            self.node_emb = LSTM(2, node_gat_parm[0], bidirectional=False)
+        elif mode == 'Transformer':
             self.node_emb = TransformerModel(2, node_gat_parm[0])
-            self.edge_emb = Edge_emb(edge_emb_parm, dropout)
-            # for param in self.edge_emb.parameters():
-            #     param.requires_grad = False
-            # self.edge_emb = torch.nn.Linear(edge_input_size, edge_gat_parm[0])
+        self.edge_emb = Edge_emb(edge_emb_parm, dropout)
 
         self.edge_gat = Multi_EGAT(node_gat_parm, edge_gat_parm, gat_heads_parm, dropout, mode)
 
